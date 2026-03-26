@@ -601,14 +601,6 @@ function renderDashboard(client, data, isLive) {
     });
   }
 
-  // nav interactivity
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      el.classList.add('active');
-    });
-  });
-
   // configure link
   const cfgBtn = document.getElementById('ds-configure');
   if (cfgBtn) cfgBtn.addEventListener('click', showConfigGuide);
@@ -643,6 +635,23 @@ function showConfigGuide() {
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NAV INTERACTIVITY
+   Set up sidebar navigation using event delegation
+═══════════════════════════════════════════════════════════════════ */
+function setupNavigation() {
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.addEventListener('click', (e) => {
+    const navItem = e.target.closest('.nav-item');
+    if (!navItem) return;
+
+    // Remove active from all nav items
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    // Add active to clicked item
+    navItem.classList.add('active');
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -708,6 +717,7 @@ async function init() {
   }
 }
 
+setupNavigation();
 init();
 </script>
 </body>
