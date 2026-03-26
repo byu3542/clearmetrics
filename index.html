@@ -170,33 +170,33 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="logo-sub">analytics platform</div>
   </div>
   <div class="nav-section">Overview</div>
-  <div class="nav-item active">
+  <div class="nav-item active" data-page="dashboard">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
     Dashboard
   </div>
-  <div class="nav-item">
+  <div class="nav-item" data-page="revenue">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 9,9 15,3"/></svg>
     Revenue
   </div>
-  <div class="nav-item">
+  <div class="nav-item" data-page="staff">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
     Staff
   </div>
-  <div class="nav-item">
+  <div class="nav-item" data-page="schedule">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M1 7h14"/></svg>
     Schedule
   </div>
   <div class="nav-section">Reports</div>
-  <div class="nav-item">
+  <div class="nav-item" data-page="report">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3V1z"/><polyline points="10,1 10,4 13,4"/></svg>
     Monthly Report
   </div>
-  <div class="nav-item">
+  <div class="nav-item" data-page="pace">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 4v4l3 2"/></svg>
     Pace Tracker
   </div>
   <div class="nav-section">Settings</div>
-  <div class="nav-item" id="nav-datasource">
+  <div class="nav-item" data-page="datasource" id="nav-datasource">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="4" rx="6" ry="2.5"/><path d="M2 4v4c0 1.4 2.7 2.5 6 2.5S14 9.4 14 8V4"/><path d="M2 8v4c0 1.4 2.7 2.5 6 2.5S14 13.4 14 12V8"/></svg>
     Data Source
   </div>
@@ -431,6 +431,50 @@ function renderSkeleton() {
 
 let chartInstance = null;
 
+// Global app state for multi-page routing
+let currentClient = null;
+let currentData = null;
+let currentIsLive = false;
+let currentPage = 'dashboard';
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROUTING — Dispatch to the correct page renderer
+═══════════════════════════════════════════════════════════════════ */
+function route(pageName) {
+  if (!currentData) return; // Wait for data load
+
+  // Update URL with page parameter
+  const params = new URLSearchParams(window.location.search);
+  params.set('page', pageName);
+  window.history.pushState(
+    { page: pageName },
+    '',
+    '?' + params.toString()
+  );
+
+  // Update current page state
+  currentPage = pageName;
+
+  // Update nav active state
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === pageName);
+  });
+
+  // Dispatch to page render function
+  const pageRenders = {
+    dashboard: renderDashboard,
+    revenue: renderRevenue,
+    staff: renderStaff,
+    schedule: renderSchedule,
+    report: renderMonthlyReport,
+    pace: renderPace,
+    datasource: renderDataSource
+  };
+
+  const renderFn = pageRenders[pageName] || renderDashboard;
+  renderFn(currentClient, currentData, currentIsLive);
+}
+
 function renderDashboard(client, data, isLive) {
   const main = document.getElementById('main-content');
 
@@ -607,6 +651,498 @@ function renderDashboard(client, data, isLive) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   PAGE RENDERERS — One function per page
+═══════════════════════════════════════════════════════════════════ */
+
+function renderRevenue(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  // sidebar
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Revenue — ClearMetrics`;
+
+  // Calculate revenue metrics
+  const totalKpi = data.kpis.find(k => k.label.includes('revenue'));
+  const totalRevenue = totalKpi ? totalKpi.value : '$0';
+  const streamsTotal = data.streams.reduce((sum, s) => {
+    const num = parseInt(s.value.replace(/[^0-9]/g, ''));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
+
+  // Daily totals
+  const dailyTotals = data.daily.labels.map((_, i) =>
+    data.daily.memberships[i] + data.daily.pt[i] + data.daily.nutrition[i] + data.daily.dropins[i]
+  );
+  const bestDay = dailyTotals.indexOf(Math.max(...dailyTotals));
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Revenue Performance</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${data.period}</span>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    ${totalKpi ? `
+      <div class="kpi-card">
+        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-value">${totalRevenue}</div>
+        <div class="kpi-sub ${totalKpi.subClass}">${totalKpi.sub}</div>
+      </div>` : ''}
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue Streams</div>
+      <div class="kpi-value">${data.streams.length}</div>
+      <div class="kpi-sub neutral">sources of income</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Best Day</div>
+      <div class="kpi-value">${data.daily.labels[bestDay]}</div>
+      <div class="kpi-sub up">highest daily total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Daily</div>
+      <div class="kpi-value">$${Math.round(dailyTotals.reduce((a,b)=>a+b,0)/dailyTotals.length).toLocaleString()}</div>
+      <div class="kpi-sub neutral">this week</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Revenue by Stream</div>
+      ${data.streams.map((s, i) => `
+        <div class="stream-row">
+          <div class="stream-top">
+            <span class="stream-name">${s.name}</span>
+            <span class="stream-val">${s.value}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:${s.color};" data-target="${s.pct}"></div></div>
+          <div class="stream-meta">${s.pct}% of total · ${s.meta}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Daily Revenue This Week</div>
+      ${data.daily.labels.map((day, i) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--muted);">${day}</span>
+          <span style="font-weight:600;font-family:'DM Mono';">$${dailyTotals[i].toLocaleString()}</span>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Top Staff by Revenue</div>
+    ${data.coaches.slice(0, 5).map((c, i) => `
+      <div class="coach-row">
+        <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
+        <div class="coach-info">
+          <div class="coach-name">${c.name}</div>
+          <div class="coach-meta">${c.meta}</div>
+        </div>
+        <span class="coach-rev">${c.revenue}</span>
+      </div>`).join('')}
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>`;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('[data-target]').forEach(el => {
+        el.style.width = el.dataset.target + '%';
+      });
+    }, 80);
+  });
+}
+
+function renderStaff(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Staff — ClearMetrics`;
+
+  const totalStaffRevenue = data.coaches.reduce((sum, c) => {
+    const num = parseInt(c.revenue.replace(/[^0-9]/g, ''));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
+  const avgRevenue = Math.round(totalStaffRevenue / data.coaches.length);
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Staff Performance</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${data.period}</span>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Staff</div>
+      <div class="kpi-value">${data.coaches.length}</div>
+      <div class="kpi-sub neutral">coaches & trainers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">$${totalStaffRevenue.toLocaleString()}</div>
+      <div class="kpi-sub neutral">from staff sales</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Average Revenue</div>
+      <div class="kpi-value">$${avgRevenue.toLocaleString()}</div>
+      <div class="kpi-sub neutral">per staff member</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top Performer</div>
+      <div class="kpi-value">${data.coaches[0].initials}</div>
+      <div class="kpi-sub up">${data.coaches[0].name.split(' ')[0]}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Staff Leaderboard</div>
+    ${data.coaches.map((c, i) => `
+      <div class="coach-row">
+        <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
+        <div class="coach-info">
+          <div class="coach-name">${c.name}</div>
+          <div class="coach-meta">${c.meta}</div>
+        </div>
+        <span class="coach-rev">${c.revenue}</span>
+        ${c.badge ? `<span class="badge ${c.badgeClass}">${c.badge}</span>` : ''}
+      </div>`).join('')}
+  </div>
+
+  ${data.coachNote ? `
+    <div class="card" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);margin-top:16px;">
+      <div class="card-title">Coaching Opportunity</div>
+      <div style="font-size:13px;color:var(--amber);line-height:1.6;">${data.coachNote}</div>
+    </div>` : ''}
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>`;
+}
+
+function renderSchedule(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Schedule — ClearMetrics`;
+
+  const slotColors = { good:'#22c55e', mid:'#3b82f6', warn:'#f59e0b' };
+  const slotTextColors = { good:'var(--green)', mid:'var(--blue)', warn:'var(--amber)' };
+  const avgUtilization = Math.round(data.slots.reduce((sum, s) => sum + s.pct, 0) / data.slots.length);
+  const goodSlots = data.slots.filter(s => s.cls === 'good').length;
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Schedule & Capacity</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${data.period}</span>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Class Slots</div>
+      <div class="kpi-value">${data.slots.length}</div>
+      <div class="kpi-sub neutral">this week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Utilization</div>
+      <div class="kpi-value">${avgUtilization}%</div>
+      <div class="kpi-sub ${avgUtilization >= 75 ? 'up' : 'warn'}">${avgUtilization >= 75 ? 'target met' : 'below target'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Well-Booked Slots</div>
+      <div class="kpi-value">${goodSlots}</div>
+      <div class="kpi-sub neutral">(>80% full)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Underbooked</div>
+      <div class="kpi-value">${data.slots.filter(s => s.cls === 'warn').length}</div>
+      <div class="kpi-sub warn">(<70% full)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Class Fill Rate by Time Slot</div>
+    ${data.slots.map(s => `
+      <div class="slot-row">
+        <span class="slot-time">${s.time}</span>
+        <div class="slot-track">
+          <div class="slot-fill" style="width:0%;background:${slotColors[s.cls]};" data-target="${s.pct}"></div>
+        </div>
+        <span class="slot-pct" style="color:${slotTextColors[s.cls]};">${s.pct}%</span>
+      </div>`).join('')}
+    ${data.slotNote ? `<div class="slot-note">&#9888; ${data.slotNote}</div>` : ''}
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>`;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('[data-target]').forEach(el => {
+        el.style.width = el.dataset.target + '%';
+      });
+    }, 80);
+  });
+}
+
+function renderMonthlyReport(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Monthly Report — ClearMetrics`;
+
+  const reportMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Monthly Report</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${reportMonth}</span>
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;">
+    <div class="card-title">Monthly Goals & Actuals</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Monthly Goal</div>
+        <div style="font-size:32px;font-weight:600;color:var(--blue);">${data.pace.goal}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Earned to Date</div>
+        <div style="font-size:32px;font-weight:600;color:var(--green);">${data.pace.earned}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Projected Month-End</div>
+        <div style="font-size:32px;font-weight:600;color:var(--text);">${data.pace.projected}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Goal Progress</div>
+        <div style="font-size:32px;font-weight:600;color:var(--amber);">${data.pace.pct}%</div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="pace-track"><div class="pace-fill" style="width:0%;" data-target="${data.pace.pct}"></div></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    ${data.kpis.map(k => `
+      <div class="kpi-card">
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-sub ${k.subClass}">${k.sub}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Retention Summary</div>
+    <div class="retention-row">
+      <div class="ret-item">New: <span style="color:var(--green);font-weight:600;">${data.pace.retNew}</span></div>
+      <div class="ret-item">Cancelled: <span style="color:var(--red);font-weight:600;">${data.pace.retCancel}</span></div>
+      <div class="ret-item">Net: <span style="color:var(--green);font-weight:600;">${data.pace.retNet}</span></div>
+      <div class="ret-item">Retention Rate: <span style="font-weight:600;">${data.pace.retRate}</span></div>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics Report</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>Generated ${data.syncTime}</span>
+  </div>`;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('[data-target]').forEach(el => {
+        el.style.width = el.dataset.target + '%';
+      });
+    }, 80);
+  });
+}
+
+function renderPace(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Pace Tracker — ClearMetrics`;
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Monthly Pace & Projections</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${data.period}</span>
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;">
+    <div class="card-title">Goal Progress</div>
+    <div style="display:flex;gap:40px;margin-bottom:20px;">
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Monthly Goal</div>
+        <div style="font-size:28px;font-weight:600;">${data.pace.goal}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Earned to Date</div>
+        <div style="font-size:28px;font-weight:600;color:var(--green);">${data.pace.earned}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Projected Finish</div>
+        <div style="font-size:28px;font-weight:600;color:var(--text);">${data.pace.projected}</div>
+      </div>
+    </div>
+    <div class="pace-track"><div class="pace-fill" style="width:0%;" data-target="${data.pace.pct}"></div></div>
+    <div class="pace-labels"><span>$0</span><span>${data.pace.pct}% earned</span><span>${data.pace.goal} goal</span></div>
+  </div>
+
+  <div class="card">
+    <div class="sub-title">Membership Retention</div>
+    <div class="retention-row">
+      <div class="ret-item">New Members: <span style="color:var(--green);font-weight:600;">${data.pace.retNew}</span></div>
+      <div class="ret-item">Cancelled: <span style="color:var(--red);font-weight:600;">${data.pace.retCancel}</span></div>
+      <div class="ret-item">Net Change: <span style="color:var(--green);font-weight:600;">${data.pace.retNet}</span></div>
+      <div class="ret-item">Retention Rate: <span style="font-weight:600;">${data.pace.retRate}</span></div>
+    </div>
+
+    ${data.pace.topItems && data.pace.topItems.length ? `
+      <div class="sub-title">Top Product Sales</div>
+      ${data.pace.topItems.map(i => `
+        <div class="nutr-row"><span>${i.name}</span><span class="nutr-meta">${i.meta}</span></div>`).join('')}
+    ` : ''}
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>`;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('[data-target]').forEach(el => {
+        el.style.width = el.dataset.target + '%';
+      });
+    }, 80);
+  });
+}
+
+function renderDataSource(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Data Source — ClearMetrics`;
+
+  const knownClients = Object.keys(CLIENT_REGISTRY);
+  const clientsHtml = knownClients.map(key => {
+    const c = CLIENT_REGISTRY[key];
+    const status = c.sheetId ? '✓ Connected' : '○ Not configured';
+    const statusColor = c.sheetId ? 'var(--green)' : 'var(--muted)';
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;padding:12px;border-bottom:1px solid var(--border);align-items:center;">
+        <div>
+          <div style="font-weight:600;">${c.name}</div>
+          <div style="font-size:11px;color:var(--dim);">${c.location}</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">${c.plan}</div>
+        <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--dim);">${c.sheetId ? c.sheetId.substring(0, 20) + '...' : 'Not set'}</div>
+        <div style="color:${statusColor};font-size:12px;font-weight:500;">${status}</div>
+      </div>
+    `;
+  }).join('');
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Data Source Configuration</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Current Status</div>
+    <div style="display:flex;gap:20px;margin-bottom:16px;">
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Connection</div>
+        <div style="font-weight:600;${isLive ? 'color:var(--green);' : 'color:var(--amber);'}">${isLive ? '● Live Data' : '● Sample Data'}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Last Sync</div>
+        <div style="font-weight:600;">${data.syncTime}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Configured Clients</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;padding:12px 0;border-bottom:2px solid var(--border);font-weight:500;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">
+      <div>Name</div>
+      <div>Plan</div>
+      <div>Sheet ID</div>
+      <div>Status</div>
+    </div>
+    ${clientsHtml}
+  </div>
+
+  <div class="card" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);">
+    <div class="card-title">Setup Instructions</div>
+    <div style="color:var(--blue);font-size:13px;line-height:1.8;">
+      <div style="margin-bottom:12px;"><strong>Step 1:</strong> Create a Google Sheet with tabs named: clientkey_kpi, clientkey_streams, clientkey_slots, clientkey_coaches, clientkey_pace, clientkey_daily</div>
+      <div style="margin-bottom:12px;"><strong>Step 2:</strong> Publish the sheet to the web (File → Share → Publish to web)</div>
+      <div style="margin-bottom:12px;"><strong>Step 3:</strong> Add the Sheet ID to the client configuration in this file, then reload</div>
+      <div><strong>Step 4:</strong> The dashboard will automatically sync data from your live sheet</div>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Data Configuration</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    CONFIG GUIDE MODAL (shown when clicking "Configure ›")
 ═══════════════════════════════════════════════════════════════════ */
 function showConfigGuide() {
@@ -647,10 +1183,10 @@ function setupNavigation() {
     const navItem = e.target.closest('.nav-item');
     if (!navItem) return;
 
-    // Remove active from all nav items
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    // Add active to clicked item
-    navItem.classList.add('active');
+    const page = navItem.dataset.page;
+    if (page) {
+      route(page);
+    }
   });
 }
 
@@ -698,7 +1234,15 @@ async function init() {
       data   = SAMPLE_DATA;
       isLive = false;
     }
-    renderDashboard(client, data, isLive);
+    // Store global state
+    currentClient = client;
+    currentData = data;
+    currentIsLive = isLive;
+
+    // Route to initial page (or dashboard if not specified)
+    const pageParams = new URLSearchParams(window.location.search);
+    const initialPage = pageParams.get('page') || 'dashboard';
+    route(initialPage);
   } catch (err) {
     main.innerHTML = `
       <div class="error-card" style="margin-top:40px;">
@@ -716,6 +1260,15 @@ async function init() {
     document.getElementById('sb-client-meta').textContent = 'Error loading data';
   }
 }
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+  if (currentData) {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page') || 'dashboard';
+    route(page);
+  }
+});
 
 setupNavigation();
 init();
