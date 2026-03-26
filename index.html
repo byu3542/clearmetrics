@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearMetrics — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ─────────────────────────────────────────────
+   HOW TO CONFIGURE A NEW CLIENT
+   ─────────────────────────────────────────────
+   1. Create a tab in your Google Sheet named
+      exactly as the client key below (e.g. "rxfit")
+   2. Publish the Sheet:
+        File → Share → Publish to web → CSV → Entire document
+      Copy the Sheet ID from the URL (the long string between /d/ and /edit)
+   3. Add the client to CLIENT_REGISTRY below
+   4. Access via: dashboard.html?client=rxfit
+   ──────────────────────────────────────────── */
+
+:root {
+  --bg:        #0d0f12;
+  --surface:   #13161b;
+  --card:      #181c22;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e8eaf0;
+  --muted:     #7a8190;
+  --dim:       #4a5060;
+  --blue:      #3b82f6;
+  --blue-dim:  rgba(59,130,246,0.15);
+  --green:     #22c55e;
+  --amber:     #f59e0b;
+  --red:       #ef4444;
+  --teal:      #14b8a6;
+  --radius:    12px;
+  --radius-sm: 7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{padding:32px;overflow:auto;}
+
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.logo-name{font-size:17px;font-weight:600;letter-spacing:-.3px;}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.nav-item.active{color:var(--text);background:rgba(59,130,246,.1);border-left-color:var(--blue);}
+.nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0;}
+.nav-section{padding:20px 20px 6px;font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;font-family:'DM Mono',monospace;}
+.sidebar-footer{margin-top:auto;padding:20px;border-top:1px solid var(--border);}
+.client-badge{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;}
+.client-name{font-size:12px;font-weight:500;}
+.client-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.page-title{font-size:22px;font-weight:600;letter-spacing:-.4px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.period-pill{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;}
+.sample-tag{background:rgba(245,158,11,.15);color:var(--amber);border-radius:4px;padding:2px 8px;font-size:11px;font-family:'DM Mono',monospace;}
+.live-tag{background:rgba(34,197,94,.15);color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-family:'DM Mono',monospace;}
+
+.datasource-bar{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--blue);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.dot-pulse{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite;}
+.dot-green{background:var(--green);}
+.dot-amber{background:var(--amber);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;animation:fadeUp .3s ease both;}
+.kpi-label{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:600;letter-spacing:-.5px;line-height:1;}
+.kpi-sub{font-size:12px;margin-top:6px;}
+.up{color:var(--green);}
+.warn{color:var(--amber);}
+.down{color:var(--red);}
+.neutral{color:var(--muted);}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;animation:fadeUp .35s ease both;}
+.card-title{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:16px;}
+
+.stream-row{margin-bottom:16px;}
+.stream-row:last-child{margin-bottom:0;}
+.stream-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.stream-name{font-size:13px;font-weight:500;}
+.stream-val{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;}
+.bar-track{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.stream-meta{font-size:11px;color:var(--dim);}
+
+.slot-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.slot-row:last-of-type{margin-bottom:0;}
+.slot-time{font-size:12px;font-family:'DM Mono',monospace;width:68px;flex-shrink:0;color:var(--muted);}
+.slot-track{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.slot-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.slot-pct{font-size:12px;font-family:'DM Mono',monospace;width:38px;text-align:right;font-weight:500;}
+.slot-note{font-size:11px;color:var(--amber);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+
+.coach-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.coach-row:last-of-type{border-bottom:none;padding-bottom:0;}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+.coach-info{flex:1;min-width:0;}
+.coach-name{font-size:13px;font-weight:500;}
+.coach-meta{font-size:11px;color:var(--dim);margin-top:1px;}
+.coach-rev{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;margin-right:8px;}
+.badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;letter-spacing:.04em;font-family:'DM Mono',monospace;}
+.badge-top{background:rgba(34,197,94,.15);color:var(--green);}
+.badge-warn{background:rgba(245,158,11,.15);color:var(--amber);}
+.coach-note{font-size:11px;color:var(--amber);margin-top:12px;padding:10px 12px;background:rgba(245,158,11,.06);border-radius:var(--radius-sm);border:1px solid rgba(245,158,11,.15);}
+
+.pace-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);}
+.pace-row:last-of-type{border-bottom:none;}
+.pace-label{font-size:13px;color:var(--muted);}
+.pace-val{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;}
+.pace-track{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin:14px 0 6px;}
+.pace-fill{height:100%;background:var(--blue);border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.pace-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;}
+.retention-row{display:flex;gap:20px;margin:14px 0 10px;flex-wrap:wrap;}
+.ret-item{font-size:13px;}
+.sub-title{font-size:11px;color:var(--dim);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;}
+.nutr-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);}
+.nutr-row:last-child{border-bottom:none;}
+.nutr-meta{font-size:11px;color:var(--dim);}
+
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;animation:fadeUp .4s ease both;}
+.chart-legend{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+.dash-footer{margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;flex-wrap:wrap;gap:8px;}
+
+/* ── loading skeleton ── */
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.skel-block{border-radius:6px;height:16px;margin-bottom:8px;}
+
+/* ── error state ── */
+.error-card{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:24px;text-align:center;color:var(--red);}
+.error-card h3{font-size:15px;margin-bottom:8px;}
+.error-card p{font-size:13px;color:var(--muted);line-height:1.7;}
+.error-card code{font-family:'DM Mono',monospace;font-size:11px;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;}
+
+/* ── not found state ── */
+.notfound{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:12px;text-align:center;}
+.notfound h2{font-size:20px;font-weight:600;}
+.notfound p{font-size:13px;color:var(--muted);max-width:380px;line-height:1.7;}
+.client-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
+.client-chip{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:4px 14px;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;color:var(--blue);}
+.client-chip:hover{background:var(--blue-dim);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.kpi-card:nth-child(2){animation-delay:.06s;}
+.kpi-card:nth-child(3){animation-delay:.12s;}
+.kpi-card:nth-child(4){animation-delay:.18s;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-name">ClearMetrics</div>
+    <div class="logo-sub">analytics platform</div>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 9,9 15,3"/></svg>
+    Revenue
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+    Staff
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M1 7h14"/></svg>
+    Schedule
+  </div>
+  <div class="nav-section">Reports</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3V1z"/><polyline points="10,1 10,4 13,4"/></svg>
+    Monthly Report
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 4v4l3 2"/></svg>
+    Pace Tracker
+  </div>
+  <div class="nav-section">Settings</div>
+  <div class="nav-item" id="nav-datasource">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="4" rx="6" ry="2.5"/><path d="M2 4v4c0 1.4 2.7 2.5 6 2.5S14 9.4 14 8V4"/><path d="M2 8v4c0 1.4 2.7 2.5 6 2.5S14 13.4 14 12V8"/></svg>
+    Data Source
+  </div>
+  <div class="sidebar-footer">
+    <div class="client-badge">
+      <div class="client-name" id="sb-client-name">—</div>
+      <div class="client-meta" id="sb-client-meta">Loading…</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main" id="main-content">
+  <!-- rendered by JS -->
+</main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CLIENT REGISTRY
+   Add a new client by adding an entry here. Keys must be lowercase,
+   no spaces. The sheetId is the long ID in your Google Sheet URL.
+
+   Sheet tab naming convention (each tab = one data type):
+     "{clientKey}_kpi"       → 4 rows: metric, value, sub, subClass
+     "{clientKey}_streams"   → rows: name, value, pct, meta, color
+     "{clientKey}_slots"     → rows: time, fillPct, fillClass
+     "{clientKey}_coaches"   → rows: initials, name, meta, revenue, badge, avatarStyle
+     "{clientKey}_pace"      → rows: key=value pairs (see SHEET FORMAT below)
+     "{clientKey}_daily"     → rows: day, memberships, pt, nutrition, dropins
+
+   If no sheetId is set, the dashboard uses built-in sample data.
+═══════════════════════════════════════════════════════════════════ */
+const CLIENT_REGISTRY = {
+  rxfit: {
+    name:     'RxFIT Gym',
+    location: 'Spanish Fork, UT',
+    plan:     'Starter',
+    // TO ACTIVATE LIVE DATA: paste your Google Sheet ID below
+    // sheetId: 'YOUR_GOOGLE_SHEET_ID_HERE',
+    sheetId:  null,   // null = use sample data
+  },
+  // ── Add future clients below ──────────────────────────────────────
+  // kabuto: {
+  //   name:    'Kabuto Sushi & Ramen',
+  //   location:'Spanish Fork, UT',
+  //   plan:    'Growth',
+  //   sheetId: 'YOUR_SHEET_ID',
+  // },
+  // dickerson: {
+  //   name:    'Dickerson Automotive',
+  //   location:'Spanish Fork, UT',
+  //   plan:    'Starter',
+  //   sheetId: 'YOUR_SHEET_ID',
+  // },
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   SAMPLE DATA  (used when sheetId is null)
+   This mirrors the exact shape that the live fetch produces,
+   so swapping in real data requires zero code changes.
+═══════════════════════════════════════════════════════════════════ */
+const SAMPLE_DATA = {
+  period:   'Mar 17–23, 2026',
+  syncTime: 'sample data — not live',
+  kpis: [
+    { label:'Total revenue',       value:'$14,820', sub:'▲ 8% vs last week',        subClass:'up'     },
+    { label:'Active members',      value:'187',     sub:'▲ 4 new this week',         subClass:'up'     },
+    { label:'Avg class fill rate', value:'61%',     sub:'Target: 75% — 14 pts below',subClass:'warn'   },
+    { label:'Revenue per member',  value:'$79.25',  sub:'Memberships + add-ons',     subClass:'neutral'},
+  ],
+  streams: [
+    { name:'Memberships',           value:'$9,350', pct:63, meta:'63% of total · 187 members @ $49.95/mo', color:'#3b82f6' },
+    { name:'Personal training',     value:'$3,120', pct:21, meta:'21% of total · 26 sessions @ $120 avg',  color:'#22c55e' },
+    { name:'Nutrition / supplements',value:'$1,480',pct:10, meta:'10% of total · 37 transactions avg $40', color:'#f59e0b' },
+    { name:'Drop-ins & day passes', value:'$870',   pct:6,  meta:'6% of total · 29 drop-ins @ $30',        color:'#ef4444' },
+  ],
+  slots: [
+    { time:'5:30 AM',  pct:88, cls:'good' },
+    { time:'6:30 AM',  pct:82, cls:'good' },
+    { time:'9:00 AM',  pct:71, cls:'mid'  },
+    { time:'4:30 PM',  pct:79, cls:'mid'  },
+    { time:'5:30 PM',  pct:91, cls:'good' },
+    { time:'6:30 PM',  pct:44, cls:'warn' },
+    { time:'Sat 9:30', pct:96, cls:'good' },
+  ],
+  slotNote: '6:30 PM chronically underbooked — staffing opportunity',
+  coaches: [
+    { initials:'JM', name:'Jordan Mills',  meta:'14 classes · 9 PT sessions · 4.9★', revenue:'$1,840', badge:'TOP',    badgeClass:'badge-top',  avatarBg:'rgba(59,130,246,.2)',  avatarColor:'#3b82f6' },
+    { initials:'SR', name:'Sara Reyes',    meta:'12 classes · 7 PT sessions · 4.8★', revenue:'$1,560', badge:null,     badgeClass:'',           avatarBg:'rgba(20,184,166,.2)', avatarColor:'#14b8a6' },
+    { initials:'TW', name:'Tyler Weston',  meta:'10 classes · 2 PT sessions · 4.6★', revenue:'$980',   badge:'LOW PT', badgeClass:'badge-warn', avatarBg:'rgba(245,158,11,.15)',avatarColor:'#f59e0b' },
+    { initials:'AH', name:'Ashley Hunt',   meta:'8 classes · 1 PT session · 4.7★',   revenue:'$740',   badge:'LOW PT', badgeClass:'badge-warn', avatarBg:'rgba(245,158,11,.15)',avatarColor:'#f59e0b' },
+  ],
+  coachNote: 'Tyler & Ashley: high class ratings but low PT conversion — coaching opportunity worth ~$600–$900/mo in recoverable revenue',
+  pace: {
+    goal:       '$58,000',
+    earned:     '$42,610',
+    projected:  '$57,340',
+    projClass:  'up',
+    pct:        73,
+    retNew:     '+22',
+    retCancel:  '−11',
+    retNet:     '+11',
+    retRate:    '94%',
+    topItems: [
+      { name:'Protein powder (5 lb)', meta:'$640 · 8 units'  },
+      { name:'Pre-workout',           meta:'$380 · 14 units' },
+      { name:'Creatine',              meta:'$290 · 19 units' },
+    ],
+  },
+  daily: {
+    labels:      ['Mon','Tue','Wed','Thu','Fri','Sat'],
+    memberships: [1336,1336,1336,1336,1336,1670],
+    pt:          [480,360,600,480,720,480],
+    nutrition:   [180,240,190,220,310,340],
+    dropins:     [90,120,150,180,210,120],
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   GOOGLE SHEETS FETCH
+   Reads a published CSV sheet and parses key=value rows.
+   Tab naming: "{clientKey}_pace", "{clientKey}_kpi", etc.
+═══════════════════════════════════════════════════════════════════ */
+async function fetchSheetTab(sheetId, tabName) {
+  // Google's published CSV URL format
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Sheet tab "${tabName}" not found (HTTP ${res.status})`);
+  const text = await res.text();
+  // Parse CSV rows, strip quotes
+  return text.trim().split('\n').map(row =>
+    row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim())
+  );
+}
+
+function parseKpi(rows) {
+  // Expected columns: metric | value | sub | subClass
+  return rows.slice(1).map(r => ({ label:r[0], value:r[1], sub:r[2], subClass:r[3] }));
+}
+function parseStreams(rows) {
+  return rows.slice(1).map(r => ({ name:r[0], value:r[1], pct:Number(r[2]), meta:r[3], color:r[4] }));
+}
+function parseSlots(rows) {
+  return rows.slice(1).map(r => ({ time:r[0], pct:Number(r[1]), cls:r[2] }));
+}
+function parseCoaches(rows) {
+  return rows.slice(1).map(r => ({
+    initials:r[0], name:r[1], meta:r[2], revenue:r[3],
+    badge:r[4]||null, badgeClass:r[5]||'',
+    avatarBg:r[6], avatarColor:r[7]
+  }));
+}
+function parsePace(rows) {
+  // key=value rows (no header): goal, earned, projected, projClass, pct, retNew, retCancel, retNet, retRate
+  // Then topItems rows: item_name | meta
+  const kv = {};
+  const topItems = [];
+  let inItems = false;
+  rows.forEach(r => {
+    if (r[0] === 'top_item') { topItems.push({ name:r[1], meta:r[2] }); return; }
+    if (r[0]) kv[r[0]] = r[1];
+  });
+  kv.pct = Number(kv.pct);
+  kv.topItems = topItems;
+  return kv;
+}
+function parseDaily(rows) {
+  // Columns: day | memberships | pt | nutrition | dropins
+  const data = { labels:[], memberships:[], pt:[], nutrition:[], dropins:[] };
+  rows.slice(1).forEach(r => {
+    data.labels.push(r[0]);
+    data.memberships.push(Number(r[1]));
+    data.pt.push(Number(r[2]));
+    data.nutrition.push(Number(r[3]));
+    data.dropins.push(Number(r[4]));
+  });
+  return data;
+}
+
+async function loadLiveData(clientKey, sheetId) {
+  const tabs = ['kpi','streams','slots','coaches','pace','daily'];
+  const results = await Promise.allSettled(
+    tabs.map(t => fetchSheetTab(sheetId, `${clientKey}_${t}`))
+  );
+  const [kpiR, streamsR, slotsR, coachesR, paceR, dailyR] = results;
+
+  return {
+    period:    'Live data',
+    syncTime:  'Synced just now',
+    kpis:      kpiR.status === 'fulfilled'     ? parseKpi(kpiR.value)         : SAMPLE_DATA.kpis,
+    streams:   streamsR.status === 'fulfilled' ? parseStreams(streamsR.value) : SAMPLE_DATA.streams,
+    slots:     slotsR.status === 'fulfilled'   ? parseSlots(slotsR.value)     : SAMPLE_DATA.slots,
+    slotNote:  SAMPLE_DATA.slotNote,
+    coaches:   coachesR.status === 'fulfilled' ? parseCoaches(coachesR.value): SAMPLE_DATA.coaches,
+    coachNote: SAMPLE_DATA.coachNote,
+    pace:      paceR.status === 'fulfilled'    ? parsePace(paceR.value)       : SAMPLE_DATA.pace,
+    daily:     dailyR.status === 'fulfilled'   ? parseDaily(dailyR.value)     : SAMPLE_DATA.daily,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+═══════════════════════════════════════════════════════════════════ */
+function $c(tag, attrs={}, ...children) {
+  const el = document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v]) => {
+    if (k === 'cls') el.className = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k === 'style') el.style.cssText = v;
+    else el.setAttribute(k, v);
+  });
+  children.forEach(c => { if (c) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+  return el;
+}
+function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function renderSkeleton() {
+  return `
+    <div class="kpi-grid">${[1,2,3,4].map(()=>`
+      <div class="kpi-card">
+        <div class="skel-block skeleton" style="width:60%;height:12px;"></div>
+        <div class="skel-block skeleton" style="width:80%;height:28px;margin-top:10px;"></div>
+        <div class="skel-block skeleton" style="width:50%;height:11px;margin-top:8px;"></div>
+      </div>`).join('')}
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="skel-block skeleton" style="width:100%;height:160px;"></div></div>
+      <div class="card"><div class="skel-block skeleton" style="width:100%;height:160px;"></div></div>
+    </div>`;
+}
+
+let chartInstance = null;
+
+function renderDashboard(client, data, isLive) {
+  const main = document.getElementById('main-content');
+
+  // sidebar
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — ClearMetrics`;
+
+  const slotColors = { good:'#22c55e', mid:'#3b82f6', warn:'#f59e0b' };
+  const slotTextColors = { good:'var(--green)', mid:'var(--blue)', warn:'var(--amber)' };
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Performance Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive
+        ? `<span class="live-tag">&#9679; live</span>`
+        : `<span class="sample-tag">sample data</span>`}
+      <span class="period-pill">${data.period}</span>
+    </div>
+  </div>
+
+  <div class="datasource-bar">
+    <span class="dot-pulse ${isLive ? 'dot-green' : 'dot-amber'}"></span>
+    ${isLive
+      ? `Connected to Google Sheet · ${data.syncTime} · Source: Square POS API`
+      : `Sample data — connect a Google Sheet to go live · <span style="opacity:.7">Configure in Data Source settings</span>`}
+    <span style="margin-left:auto;opacity:.6;cursor:pointer;" id="ds-configure">Configure ›</span>
+  </div>
+
+  <div class="kpi-grid">
+    ${data.kpis.map(k => `
+      <div class="kpi-card">
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-sub ${k.subClass}">${k.sub}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Revenue by stream — this week</div>
+      ${data.streams.map(s => `
+        <div class="stream-row">
+          <div class="stream-top">
+            <span class="stream-name">${s.name}</span>
+            <span class="stream-val">${s.value}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:${s.color};" data-target="${s.pct}"></div></div>
+          <div class="stream-meta">${s.meta}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Class fill rate by time slot</div>
+      ${data.slots.map(s => `
+        <div class="slot-row">
+          <span class="slot-time">${s.time}</span>
+          <div class="slot-track">
+            <div class="slot-fill" style="width:0%;background:${slotColors[s.cls]};" data-target="${s.pct}"></div>
+          </div>
+          <span class="slot-pct" style="color:${slotTextColors[s.cls]};">${s.pct}%</span>
+        </div>`).join('')}
+      ${data.slotNote ? `<div class="slot-note">&#9888; ${data.slotNote}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Staff performance — this week</div>
+      ${data.coaches.map(c => `
+        <div class="coach-row">
+          <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
+          <div class="coach-info">
+            <div class="coach-name">${c.name}</div>
+            <div class="coach-meta">${c.meta}</div>
+          </div>
+          <span class="coach-rev">${c.revenue}</span>
+          ${c.badge ? `<span class="badge ${c.badgeClass}">${c.badge}</span>` : ''}
+        </div>`).join('')}
+      ${data.coachNote ? `<div class="coach-note">${data.coachNote}</div>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Monthly revenue pace</div>
+      <div class="pace-row"><span class="pace-label">Goal</span><span class="pace-val">${data.pace.goal}</span></div>
+      <div class="pace-row"><span class="pace-label">Earned to date</span><span class="pace-val">${data.pace.earned}</span></div>
+      <div class="pace-row"><span class="pace-label">Projected month-end</span><span class="pace-val ${data.pace.projClass || ''}">${data.pace.projected}</span></div>
+      <div class="pace-track"><div class="pace-fill" id="pace-bar" style="width:0%;" data-target="${data.pace.pct}"></div></div>
+      <div class="pace-labels"><span>$0</span><span>${data.pace.pct}% earned</span><span>${data.pace.goal} goal</span></div>
+
+      <div class="sub-title">Membership retention — last 90 days</div>
+      <div class="retention-row">
+        <div class="ret-item">New: <span style="color:var(--green);font-weight:600;">${data.pace.retNew}</span></div>
+        <div class="ret-item">Cancelled: <span style="color:var(--red);font-weight:600;">${data.pace.retCancel}</span></div>
+        <div class="ret-item">Net: <span style="color:var(--green);font-weight:600;">${data.pace.retNet}</span></div>
+        <div class="ret-item">Retention: <span style="font-weight:600;">${data.pace.retRate}</span></div>
+      </div>
+
+      ${data.pace.topItems && data.pace.topItems.length ? `
+        <div class="sub-title">Top product sales — this week</div>
+        ${data.pace.topItems.map(i => `
+          <div class="nutr-row"><span>${i.name}</span><span class="nutr-meta">${i.meta}</span></div>`).join('')}
+      ` : ''}
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title">Daily revenue — current week</div>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="revenueChart"></canvas></div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>Memberships</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div>Personal training</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Nutrition</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Drop-ins</div>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    <span>ClearMetrics Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span id="footer-sync">${data.syncTime}</span>
+  </div>`;
+
+  // Animate bars after paint
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('[data-target]').forEach(el => {
+        el.style.width = el.dataset.target + '%';
+      });
+    }, 80);
+  });
+
+  // Build chart
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  const ctx = document.getElementById('revenueChart');
+  if (ctx) {
+    chartInstance = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data.daily.labels,
+        datasets: [
+          { label:'Memberships',       data:data.daily.memberships, backgroundColor:'#3b82f6', stack:'a' },
+          { label:'Personal training', data:data.daily.pt,          backgroundColor:'#22c55e', stack:'a' },
+          { label:'Nutrition',         data:data.daily.nutrition,   backgroundColor:'#f59e0b', stack:'a' },
+          { label:'Drop-ins',          data:data.daily.dropins,     backgroundColor:'#ef4444', stack:'a' },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend: { display:false },
+          tooltip: {
+            backgroundColor:'#1e2330', borderColor:'rgba(255,255,255,0.1)',
+            borderWidth:1, titleColor:'#7a8190', bodyColor:'#e8eaf0', padding:10,
+            callbacks: { label: c => '  ' + c.dataset.label + ': $' + c.parsed.y.toLocaleString() }
+          }
+        },
+        scales: {
+          x: { stacked:true, grid:{ display:false }, ticks:{ color:'#4a5060', font:{ family:"'DM Mono'" } } },
+          y: { stacked:true, grid:{ color:'rgba(255,255,255,0.04)' }, border:{ dash:[4,4], display:false },
+               ticks:{ color:'#4a5060', font:{ family:"'DM Mono'" }, callback: v => '$'+v.toLocaleString() } }
+        }
+      }
+    });
+  }
+
+  // nav interactivity
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  // configure link
+  const cfgBtn = document.getElementById('ds-configure');
+  if (cfgBtn) cfgBtn.addEventListener('click', showConfigGuide);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONFIG GUIDE MODAL (shown when clicking "Configure ›")
+═══════════════════════════════════════════════════════════════════ */
+function showConfigGuide() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:999;padding:24px;';
+  overlay.innerHTML = `
+    <div style="background:#181c22;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;max-width:520px;width:100%;position:relative;">
+      <button onclick="this.closest('div').parentElement.remove()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#7a8190;font-size:18px;cursor:pointer;">✕</button>
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Connect your Google Sheet</div>
+      <div style="font-size:12px;color:#7a8190;font-family:'DM Mono',monospace;margin-bottom:20px;">3 steps · ~10 minutes</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:#13161b;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:600;color:#3b82f6;margin-bottom:6px;">Step 1 — Publish your Sheet</div>
+          <div style="font-size:13px;color:#b0b8c8;line-height:1.7;">In Google Sheets: <strong>File → Share → Publish to web</strong><br>Choose <em>Entire document</em> → <em>CSV</em> → click Publish.<br>Copy the Sheet ID from your browser URL — it's the long string between <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">/d/</code> and <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">/edit</code>.</div>
+        </div>
+        <div style="background:#13161b;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:600;color:#3b82f6;margin-bottom:6px;">Step 2 — Name your tabs correctly</div>
+          <div style="font-size:13px;color:#b0b8c8;line-height:1.7;">Create one tab per data section, named <strong>clientkey_tabtype</strong>.<br>For RxFIT use: <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">rxfit_kpi</code> &nbsp;<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">rxfit_streams</code> &nbsp;<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">rxfit_daily</code> etc.<br>The Excel file you downloaded has the exact column structure needed.</div>
+        </div>
+        <div style="background:#13161b;border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:600;color:#3b82f6;margin-bottom:6px;">Step 3 — Add the Sheet ID to this file</div>
+          <div style="font-size:13px;color:#b0b8c8;line-height:1.7;">Open <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">clearmetrics_dashboard.html</code> in a text editor.<br>Find <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">sheetId: null</code> under the client and replace <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;">null</code> with your Sheet ID in quotes.<br>Save and reload — the dashboard reads live data automatically.</div>
+        </div>
+      </div>
+      <div style="margin-top:18px;font-size:11px;color:#4a5060;font-family:'DM Mono',monospace;">Access URL: dashboard.html?client=rxfit · dashboard.html?client=kabuto</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROUTER — reads ?client= param and bootstraps the right data
+═══════════════════════════════════════════════════════════════════ */
+async function init() {
+  const params  = new URLSearchParams(window.location.search);
+  const key     = (params.get('client') || 'rxfit').toLowerCase();
+  const client  = CLIENT_REGISTRY[key];
+  const main    = document.getElementById('main-content');
+
+  // Unknown client
+  if (!client) {
+    const knownKeys = Object.keys(CLIENT_REGISTRY);
+    main.innerHTML = `
+      <div class="notfound">
+        <div style="font-size:32px;opacity:.3;">?</div>
+        <h2>Client not found: <code style="font-family:'DM Mono',monospace;font-size:17px;">${key}</code></h2>
+        <p>No client with that key exists in the registry. Add it to <code>CLIENT_REGISTRY</code> in the dashboard file, or choose an existing client:</p>
+        <div class="client-list">
+          ${knownKeys.map(k => `<div class="client-chip" onclick="window.location.search='?client=${k}'">${k}</div>`).join('')}
+        </div>
+      </div>`;
+    document.getElementById('sb-client-name').textContent = 'Unknown';
+    document.getElementById('sb-client-meta').textContent = key;
+    return;
+  }
+
+  // Show skeleton while loading
+  main.innerHTML = `
+    <div class="topbar">
+      <div><div class="page-title">Loading…</div></div>
+    </div>
+    ${renderSkeleton()}`;
+
+  try {
+    let data, isLive;
+    if (client.sheetId) {
+      data   = await loadLiveData(key, client.sheetId);
+      isLive = true;
+    } else {
+      // Simulate brief load for UX realism
+      await new Promise(r => setTimeout(r, 400));
+      data   = SAMPLE_DATA;
+      isLive = false;
+    }
+    renderDashboard(client, data, isLive);
+  } catch (err) {
+    main.innerHTML = `
+      <div class="error-card" style="margin-top:40px;">
+        <h3>Could not load data</h3>
+        <p>There was a problem fetching data for <code>${client.name}</code>.<br>
+        Check that the Google Sheet is published and the Sheet ID is correct.</p>
+        <p style="margin-top:12px;font-size:12px;color:var(--red);font-family:'DM Mono',monospace;">${err.message}</p>
+        <p style="margin-top:16px;">
+          <span style="cursor:pointer;color:var(--blue);font-size:13px;" onclick="init()">↻ Retry</span>
+          &nbsp;&nbsp;
+          <span style="cursor:pointer;color:var(--muted);font-size:13px;" onclick="showConfigGuide()">Configure data source ›</span>
+        </p>
+      </div>`;
+    document.getElementById('sb-client-name').textContent = client.name;
+    document.getElementById('sb-client-meta').textContent = 'Error loading data';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
+
+
