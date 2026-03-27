@@ -158,6 +158,55 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .kpi-card:nth-child(2){animation-delay:.06s;}
 .kpi-card:nth-child(3){animation-delay:.12s;}
 .kpi-card:nth-child(4){animation-delay:.18s;}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MULTI-LOCATION STYLES
+═══════════════════════════════════════════════════════════════════ */
+.location-selector-container{margin-bottom:20px;}
+.location-selector{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;animation:fadeUp .35s ease both;}
+.location-selector-header{margin-bottom:12px;}
+.location-label{display:block;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;}
+.location-pills{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.location-pill{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-family:'DM Sans';transition:all .2s ease;}
+.location-pill:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.location-pill.active{background:var(--blue);border-color:var(--blue);color:white;}
+.location-meta{font-size:12px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin-top:8px;}
+.location-address{color:var(--text);margin-bottom:4px;font-weight:500;}
+.location-contact{color:var(--muted);}
+
+/* Schedule Grid Styles */
+.schedule-container{overflow-x:auto;border-radius:var(--radius);}
+.schedule-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.schedule-table thead{background:var(--surface);}
+.schedule-table th{padding:12px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;}
+.schedule-table td{padding:12px;border-bottom:1px solid var(--border);font-size:13px;}
+.schedule-table tbody tr:last-child td{border-bottom:none;}
+.schedule-time-cell{background:var(--surface);font-weight:500;color:var(--text);font-family:'DM Mono',monospace;white-space:nowrap;min-width:80px;}
+.schedule-class-cell{vertical-align:top;background:var(--card);}
+.schedule-class{padding:4px 0;}
+.class-name{font-weight:600;color:var(--text);margin-bottom:2px;}
+.class-instructor{font-size:11px;color:var(--muted);margin-bottom:2px;}
+.class-capacity{font-size:11px;color:var(--dim);margin-bottom:2px;}
+.class-duration{font-size:10px;color:var(--muted);opacity:.7;}
+
+/* Pricing Grid Styles */
+.pricing-section{animation:fadeUp .35s ease both;}
+.pricing-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono',monospace;}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:28px;}
+.pricing-grid-small{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:28px;}
+.pricing-card,.pricing-card-small{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;transition:all .2s ease;}
+.pricing-card:hover,.pricing-card-small:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.pricing-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px;}
+.pricing-name{font-weight:600;color:var(--text);font-size:13px;}
+.pricing-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;text-transform:uppercase;white-space:nowrap;}
+.pricing-price{font-size:24px;font-weight:700;color:var(--blue);margin-bottom:8px;line-height:1;}
+.pricing-frequency{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px;}
+.pricing-features{list-style:none;font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:0;flex-grow:1;}
+.pricing-features li{margin-bottom:6px;}
+.pricing-features li:before{content:'✓ ';color:var(--green);font-weight:600;margin-right:6px;}
+.pricing-description{font-size:12px;color:var(--muted);margin:0;margin-top:auto;}
+.no-data{padding:24px;text-align:center;color:var(--muted);font-size:13px;}
+
 </style>
 </head>
 <body>
@@ -252,6 +301,118 @@ const CLIENT_REGISTRY = {
   //   plan:    'Starter',
   //   sheetId: 'YOUR_SHEET_ID',
   // },
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOCATION REGISTRY (Multi-Location Support)
+   Maps client keys to their physical locations
+═══════════════════════════════════════════════════════════════════ */
+const LOCATION_REGISTRY = {
+  rxfit: [
+    { key: 'holladay', name: 'RxFIT Holladay', address: '2345 E Murray Holladay Rd, Holladay, UT 84121', phone: '(801) 555-0101', hours: '5 AM–9 PM', maxCapacity: 120 },
+    { key: 'orem', name: 'RxFIT Orem', address: '456 W Center St, Orem, UT 84057', phone: '(801) 555-0102', hours: '5 AM–9 PM', maxCapacity: 100 },
+    { key: 'spanish_fork', name: 'RxFIT Spanish Fork', address: '789 S Main St, Spanish Fork, UT 84663', phone: '(801) 555-0103', hours: '6 AM–8 PM', maxCapacity: 80 },
+  ],
+  // Future clients: kabuto, dickerson, etc.
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   HARDCODED RXFIT DATA (Location-Specific)
+   Includes schedules, pricing, and metadata for each location
+   Future: Replace with Google Sheets data if {clientKey}_{locationKey}_* tabs exist
+═══════════════════════════════════════════════════════════════════ */
+const RXFIT_DATA = {
+  locations: {
+    holladay: {
+      schedule: [
+        { day: 'Monday', time: '6:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Monday', time: '9:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Monday', time: '4:00 PM', duration: '1.5h', class: 'Open Gym', instructor: 'Levi Nielson', capacity: 40, color: '#EF4444', type: 'open_gym' },
+        { day: 'Monday', time: '5:30 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Tuesday', time: '6:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Tuesday', time: '12:00 PM', duration: '1h', class: 'Nutrition Workshop', instructor: 'Dr. Sarah', capacity: 15, color: '#10B981', type: 'workshop' },
+        { day: 'Tuesday', time: '5:30 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '6:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '9:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '4:00 PM', duration: '1.5h', class: 'Open Gym', instructor: 'Marcus Green', capacity: 40, color: '#EF4444', type: 'open_gym' },
+        { day: 'Wednesday', time: '5:30 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Levi Nielson', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Thursday', time: '6:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Thursday', time: '5:30 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '6:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '12:00 PM', duration: '1h', class: 'Open Gym', instructor: 'Levi Nielson', capacity: 40, color: '#EF4444', type: 'open_gym' },
+        { day: 'Friday', time: '5:30 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Saturday', time: '8:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 20, color: '#9333EA', type: 'functional' },
+        { day: 'Saturday', time: '9:30 AM', duration: '1.5h', class: 'Community WOD', instructor: 'All Coaches', capacity: 35, color: '#F59E0B', type: 'group' },
+        { day: 'Sunday', time: '10:00 AM', duration: '1h', class: 'Recovery Class', instructor: 'Cheryl Bishop', capacity: 25, color: '#06B6D4', type: 'recovery' },
+      ],
+      pricing: [
+        { section: 'membership', name: '3x/week Group', price: '$120', frequency: '/month', features: ['3 classes/week', 'App access', 'Nutrition guides'], badge: 'Popular', badgeColor: '#22c55e' },
+        { section: 'membership', name: 'Unlimited Group', price: '$140', frequency: '/month', features: ['Unlimited classes', 'App access', 'Nutrition guides'], badge: 'Best Value', badgeColor: '#3b82f6' },
+        { section: 'membership', name: 'V.I.P. Elite', price: '$49', frequency: '/week', features: ['Unlimited classes', '1-on-1 consult', 'Video library', 'Priority booking'], badge: 'Premium', badgeColor: '#f59e0b' },
+        { section: 'commitment', name: '3-Month Commitment', price: '$130', frequency: '/month', features: ['Unlimited classes', 'No cancellation fee after term', 'App access'], discount: 'Start here' },
+        { section: 'commitment', name: '6-Month Commitment', price: '$120', frequency: '/month', features: ['Unlimited classes', 'Priority scheduling', 'App access'], discount: '14% savings' },
+        { section: 'commitment', name: '12-Month Commitment', price: '$110', frequency: '/month', features: ['Unlimited classes', 'Free PT session/month', 'Priority scheduling', 'App access'], discount: '21% savings' },
+        { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
+        { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
+      ],
+    },
+    orem: {
+      schedule: [
+        { day: 'Monday', time: '5:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Monday', time: '10:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Monday', time: '4:30 PM', duration: '1h', class: 'Open Gym', instructor: 'Marcus Green', capacity: 35, color: '#EF4444', type: 'open_gym' },
+        { day: 'Tuesday', time: '5:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Tuesday', time: '6:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Levi Nielson', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '5:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '10:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '4:30 PM', duration: '1.5h', class: 'Open Gym', instructor: 'Levi Nielson', capacity: 35, color: '#EF4444', type: 'open_gym' },
+        { day: 'Thursday', time: '5:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Thursday', time: '6:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '5:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '10:00 AM', duration: '1.5h', class: 'Open Gym', instructor: 'Marcus Green', capacity: 35, color: '#EF4444', type: 'open_gym' },
+        { day: 'Saturday', time: '8:00 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 18, color: '#9333EA', type: 'functional' },
+        { day: 'Saturday', time: '9:30 AM', duration: '1h', class: 'Community WOD', instructor: 'All Coaches', capacity: 30, color: '#F59E0B', type: 'group' },
+        { day: 'Sunday', time: '10:00 AM', duration: '1h', class: 'Recovery Class', instructor: 'Jen Wright', capacity: 20, color: '#06B6D4', type: 'recovery' },
+      ],
+      pricing: [
+        { section: 'membership', name: '3x/week Group', price: '$120', frequency: '/month', features: ['3 classes/week', 'App access', 'Nutrition guides'], badge: 'Popular', badgeColor: '#22c55e' },
+        { section: 'membership', name: 'Unlimited Group', price: '$140', frequency: '/month', features: ['Unlimited classes', 'App access', 'Nutrition guides'], badge: 'Best Value', badgeColor: '#3b82f6' },
+        { section: 'membership', name: 'V.I.P. Elite', price: '$49', frequency: '/week', features: ['Unlimited classes', '1-on-1 consult', 'Video library', 'Priority booking'], badge: 'Premium', badgeColor: '#f59e0b' },
+        { section: 'commitment', name: '3-Month Commitment', price: '$130', frequency: '/month', features: ['Unlimited classes', 'No cancellation fee after term', 'App access'], discount: 'Start here' },
+        { section: 'commitment', name: '6-Month Commitment', price: '$120', frequency: '/month', features: ['Unlimited classes', 'Priority scheduling', 'App access'], discount: '14% savings' },
+        { section: 'commitment', name: '12-Month Commitment', price: '$110', frequency: '/month', features: ['Unlimited classes', 'Free PT session/month', 'Priority scheduling', 'App access'], discount: '21% savings' },
+        { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
+        { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
+      ],
+    },
+    spanish_fork: {
+      schedule: [
+        { day: 'Monday', time: '6:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Levi Nielson', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Monday', time: '10:00 AM', duration: '1h', class: 'Open Gym', instructor: 'Bri Stoker', capacity: 30, color: '#EF4444', type: 'open_gym' },
+        { day: 'Monday', time: '5:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Tuesday', time: '6:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Tuesday', time: '5:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Marcus Green', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '6:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Wednesday', time: '10:00 AM', duration: '1.5h', class: 'Open Gym', instructor: 'Levi Nielson', capacity: 30, color: '#EF4444', type: 'open_gym' },
+        { day: 'Wednesday', time: '5:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Bri Stoker', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Thursday', time: '6:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Cheryl Bishop', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Thursday', time: '5:00 PM', duration: '1h', class: 'Functional Fitness', instructor: 'Jen Wright', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '6:30 AM', duration: '1h', class: 'Functional Fitness', instructor: 'Marcus Green', capacity: 16, color: '#9333EA', type: 'functional' },
+        { day: 'Friday', time: '10:00 AM', duration: '1h', class: 'Open Gym', instructor: 'Bri Stoker', capacity: 30, color: '#EF4444', type: 'open_gym' },
+        { day: 'Saturday', time: '8:00 AM', duration: '1h', class: 'Community WOD', instructor: 'All Coaches', capacity: 25, color: '#F59E0B', type: 'group' },
+      ],
+      pricing: [
+        { section: 'membership', name: '3x/week Group', price: '$120', frequency: '/month', features: ['3 classes/week', 'App access', 'Nutrition guides'], badge: 'Popular', badgeColor: '#22c55e' },
+        { section: 'membership', name: 'Unlimited Group', price: '$140', frequency: '/month', features: ['Unlimited classes', 'App access', 'Nutrition guides'], badge: 'Best Value', badgeColor: '#3b82f6' },
+        { section: 'membership', name: 'V.I.P. Elite', price: '$49', frequency: '/week', features: ['Unlimited classes', '1-on-1 consult', 'Video library', 'Priority booking'], badge: 'Premium', badgeColor: '#f59e0b' },
+        { section: 'commitment', name: '3-Month Commitment', price: '$130', frequency: '/month', features: ['Unlimited classes', 'No cancellation fee after term', 'App access'], discount: 'Start here' },
+        { section: 'commitment', name: '6-Month Commitment', price: '$120', frequency: '/month', features: ['Unlimited classes', 'Priority scheduling', 'App access'], discount: '14% savings' },
+        { section: 'commitment', name: '12-Month Commitment', price: '$110', frequency: '/month', features: ['Unlimited classes', 'Free PT session/month', 'Priority scheduling', 'App access'], discount: '21% savings' },
+        { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
+        { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
+      ],
+    },
+  }
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -414,6 +575,158 @@ function $c(tag, attrs={}, ...children) {
 }
 function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
 
+/* ═══════════════════════════════════════════════════════════════════
+   COMPONENT FUNCTIONS — Multi-Location & Schedule/Pricing
+═══════════════════════════════════════════════════════════════════ */
+
+function renderLocationSelector(clientKey) {
+  const locations = getLocations(clientKey);
+  if (!locations || locations.length === 0) return '';
+
+  const currentLoc = getLocation(clientKey, currentLocation);
+
+  return `
+    <div class="location-selector-container">
+      <div class="location-selector">
+        <div class="location-selector-header">
+          <label class="location-label">Location</label>
+        </div>
+        <div class="location-pills">
+          ${locations.map(loc => `
+            <button class="location-pill ${loc.key === currentLocation ? 'active' : ''}"
+                    data-location="${loc.key}"
+                    onclick="switchLocation('${clientKey}', '${loc.key}')">
+              ${loc.name.split(' ')[1]}
+            </button>
+          `).join('')}
+        </div>
+        ${currentLoc ? `
+          <div class="location-meta">
+            <div class="location-address">${currentLoc.address}</div>
+            <div class="location-contact">${currentLoc.phone} • ${currentLoc.hours}</div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function switchLocation(clientKey, locationKey) {
+  const location = getLocation(clientKey, locationKey);
+  if (!location) return;
+
+  currentLocation = locationKey;
+  updateLocationURL(locationKey);
+  route(currentPage);
+}
+
+function renderScheduleGrid(schedule) {
+  if (!schedule || schedule.length === 0) {
+    return '<div class="no-data">No schedule configured for this location</div>';
+  }
+
+  // Group schedule by day
+  const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const scheduleByDay = {};
+  dayOrder.forEach(day => scheduleByDay[day] = []);
+  schedule.forEach(cls => {
+    if (scheduleByDay[cls.day]) scheduleByDay[cls.day].push(cls);
+  });
+
+  return `
+    <div class="schedule-container">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            ${dayOrder.map(day => `<th>${day}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${[...new Set(schedule.map(c => c.time))].sort().map(time => `
+            <tr>
+              <td class="schedule-time-cell">${time}</td>
+              ${dayOrder.map(day => {
+                const cls = scheduleByDay[day].find(c => c.time === time);
+                return `<td class="schedule-class-cell" ${cls ? `style="background-color: ${cls.color}20; border-left: 3px solid ${cls.color};"` : ''}>
+                  ${cls ? `
+                    <div class="schedule-class">
+                      <div class="class-name">${cls.class}</div>
+                      <div class="class-instructor">${cls.instructor}</div>
+                      <div class="class-capacity">${cls.capacity} members</div>
+                      <div class="class-duration">${cls.duration}</div>
+                    </div>
+                  ` : ''}
+                </td>`;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderPricingCard(pricing) {
+  if (!pricing || pricing.length === 0) {
+    return '<div class="no-data">No pricing configured for this location</div>';
+  }
+
+  const memberships = pricing.filter(p => p.section === 'membership');
+  const commitments = pricing.filter(p => p.section === 'commitment');
+  const addons = pricing.filter(p => p.section === 'addon');
+
+  return `
+    <div class="pricing-section">
+      <h3 class="pricing-title">Membership Options</h3>
+      <div class="pricing-grid">
+        ${memberships.map(m => `
+          <div class="pricing-card" style="border-top: 3px solid var(--blue);">
+            <div class="pricing-header">
+              <div class="pricing-name">${m.name}</div>
+              ${m.badge ? `<div class="pricing-badge" style="background-color: ${m.badgeColor}30; color: ${m.badgeColor}; border: 1px solid ${m.badgeColor};">${m.badge}</div>` : ''}
+            </div>
+            <div class="pricing-price">${m.price}<span class="pricing-frequency">${m.frequency}</span></div>
+            <ul class="pricing-features">
+              ${m.features.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+
+      <h3 class="pricing-title" style="margin-top: 32px;">Commitment Discounts</h3>
+      <div class="pricing-grid">
+        ${commitments.map(c => `
+          <div class="pricing-card" style="border-top: 3px solid var(--amber);">
+            <div class="pricing-header">
+              <div class="pricing-name">${c.name}</div>
+              ${c.discount ? `<div class="pricing-badge" style="background-color: var(--amber); color: var(--bg);">${c.discount}</div>` : ''}
+            </div>
+            <div class="pricing-price">${c.price}<span class="pricing-frequency">${c.frequency}</span></div>
+            <ul class="pricing-features">
+              ${c.features.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+
+      <h3 class="pricing-title" style="margin-top: 32px;">Add-ons</h3>
+      <div class="pricing-grid-small">
+        ${addons.map(a => `
+          <div class="pricing-card-small" style="border-top: 3px solid var(--green);">
+            <div class="pricing-header">
+              <div class="pricing-name">${a.name}</div>
+              ${a.badge ? `<div class="pricing-badge" style="background-color: var(--green); color: var(--bg);">${a.badge}</div>` : ''}
+            </div>
+            <div class="pricing-price">${a.price}<span class="pricing-frequency">${a.frequency}</span></div>
+            <p class="pricing-description">${a.features[0]}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function renderSkeleton() {
   return `
     <div class="kpi-grid">${[1,2,3,4].map(()=>`
@@ -436,6 +749,43 @@ let currentClient = null;
 let currentData = null;
 let currentIsLive = false;
 let currentPage = 'dashboard';
+
+// ─────────────────────────────────────────────────────────
+// MULTI-LOCATION SUPPORT
+// ─────────────────────────────────────────────────────────
+let currentLocation = 'holladay';  // Default to first location
+let currentLocationData = null;    // Cache for location-specific data
+
+/* ═══════════════════════════════════════════════════════════════════
+   HELPER FUNCTIONS — Multi-Location Support
+═══════════════════════════════════════════════════════════════════ */
+
+// Get list of locations for a client
+function getLocations(clientKey) {
+  return LOCATION_REGISTRY[clientKey] || [];
+}
+
+// Get location object by key
+function getLocation(clientKey, locationKey) {
+  const locations = getLocations(clientKey);
+  return locations.find(loc => loc.key === locationKey);
+}
+
+// Get location-specific data (schedule, pricing, etc.)
+function getLocationData(clientKey, locationKey, dataType) {
+  // For RxFIT, use hardcoded data
+  if (clientKey === 'rxfit' && RXFIT_DATA.locations[locationKey]) {
+    return RXFIT_DATA.locations[locationKey][dataType] || null;
+  }
+  return null;
+}
+
+// Update URL with location parameter
+function updateLocationURL(locationKey) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('location', locationKey);
+  window.history.pushState({}, '', `?${params.toString()}`);
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    ROUTING — Dispatch to the correct page renderer
@@ -507,6 +857,8 @@ function renderDashboard(client, data, isLive) {
       : `Sample data — connect a Google Sheet to go live · <span style="opacity:.7">Configure in Data Source settings</span>`}
     <span style="margin-left:auto;opacity:.6;cursor:pointer;" id="ds-configure">Configure ›</span>
   </div>
+
+  ${renderLocationSelector(Object.keys(CLIENT_REGISTRY)[0])}
 
   <div class="kpi-grid">
     ${data.kpis.map(k => `
@@ -596,6 +948,11 @@ function renderDashboard(client, data, isLive) {
     </div>
   </div>
 
+  <div class="card">
+    <div class="card-title">Membership Options</div>
+    ${renderPricingCard(getLocationData(Object.keys(CLIENT_REGISTRY)[0], currentLocation, 'pricing'))}
+  </div>
+
   <div class="dash-footer">
     <span>ClearMetrics Analytics</span>
     <span>${client.name} · ${client.location} · ${client.plan} plan</span>
@@ -656,6 +1013,7 @@ function renderDashboard(client, data, isLive) {
 
 function renderRevenue(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
 
   // sidebar
   document.getElementById('sb-client-name').textContent = client.name;
@@ -687,6 +1045,8 @@ function renderRevenue(client, data, isLive) {
       <span class="period-pill">${data.period}</span>
     </div>
   </div>
+
+  ${renderLocationSelector(clientKey)}
 
   <div class="kpi-grid">
     ${totalKpi ? `
@@ -766,6 +1126,7 @@ function renderRevenue(client, data, isLive) {
 
 function renderStaff(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
 
   document.getElementById('sb-client-name').textContent = client.name;
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
@@ -788,6 +1149,8 @@ function renderStaff(client, data, isLive) {
       <span class="period-pill">${data.period}</span>
     </div>
   </div>
+
+  ${renderLocationSelector(clientKey)}
 
   <div class="kpi-grid">
     <div class="kpi-card">
@@ -841,6 +1204,8 @@ function renderStaff(client, data, isLive) {
 
 function renderSchedule(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
+  const schedule = getLocationData(clientKey, currentLocation, 'schedule');
 
   document.getElementById('sb-client-name').textContent = client.name;
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
@@ -861,6 +1226,13 @@ function renderSchedule(client, data, isLive) {
       ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
       <span class="period-pill">${data.period}</span>
     </div>
+  </div>
+
+  ${renderLocationSelector(clientKey)}
+
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-title">Weekly Class Schedule</div>
+    ${renderScheduleGrid(schedule)}
   </div>
 
   <div class="kpi-grid">
@@ -916,6 +1288,7 @@ function renderSchedule(client, data, isLive) {
 
 function renderMonthlyReport(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
 
   document.getElementById('sb-client-name').textContent = client.name;
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
@@ -934,6 +1307,8 @@ function renderMonthlyReport(client, data, isLive) {
       <span class="period-pill">${reportMonth}</span>
     </div>
   </div>
+
+  ${renderLocationSelector(clientKey)}
 
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;">
     <div class="card-title">Monthly Goals & Actuals</div>
@@ -996,6 +1371,7 @@ function renderMonthlyReport(client, data, isLive) {
 
 function renderPace(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
 
   document.getElementById('sb-client-name').textContent = client.name;
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
@@ -1012,6 +1388,8 @@ function renderPace(client, data, isLive) {
       <span class="period-pill">${data.period}</span>
     </div>
   </div>
+
+  ${renderLocationSelector(clientKey)}
 
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;">
     <div class="card-title">Goal Progress</div>
@@ -1199,6 +1577,18 @@ async function init() {
   const client  = CLIENT_REGISTRY[key];
   const main    = document.getElementById('main-content');
 
+  // MULTI-LOCATION: Read and validate location parameter
+  const locationParam = params.get('location');
+  const locations = getLocations(key);
+  if (locationParam && locations.some(loc => loc.key === locationParam)) {
+    currentLocation = locationParam;
+  } else if (locations.length > 0) {
+    currentLocation = locations[0].key;
+    // Update URL with default location
+    params.set('location', currentLocation);
+    window.history.replaceState({}, '', `?${params.toString()}`);
+  }
+
   // Unknown client
   if (!client) {
     const knownKeys = Object.keys(CLIENT_REGISTRY);
@@ -1266,6 +1656,11 @@ window.addEventListener('popstate', (e) => {
   if (currentData) {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page') || 'dashboard';
+    // MULTI-LOCATION: Update location from URL if changed
+    const locationParam = params.get('location');
+    if (locationParam) {
+      currentLocation = locationParam;
+    }
     route(page);
   }
 });
