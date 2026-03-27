@@ -313,6 +313,7 @@ const CLIENT_REGISTRY = {
 ═══════════════════════════════════════════════════════════════════ */
 const LOCATION_REGISTRY = {
   rxfit: [
+    { key: 'all', name: 'All Locations', address: 'Combined view across all RxFIT locations', phone: 'N/A', hours: 'N/A', maxCapacity: 300 },
     { key: 'holladay', name: 'RxFIT Holladay', address: '2345 E Murray Holladay Rd, Holladay, UT 84121', phone: '(801) 555-0101', hours: '5 AM–9 PM', maxCapacity: 120 },
     { key: 'orem', name: 'RxFIT Orem', address: '456 W Center St, Orem, UT 84057', phone: '(801) 555-0102', hours: '5 AM–9 PM', maxCapacity: 100 },
     { key: 'spanish_fork', name: 'RxFIT Spanish Fork', address: '789 S Main St, Spanish Fork, UT 84663', phone: '(801) 555-0103', hours: '6 AM–8 PM', maxCapacity: 80 },
@@ -746,7 +747,7 @@ function renderLocationSelector(clientKey) {
             <button class="location-pill ${loc.key === currentLocation ? 'active' : ''}"
                     data-location="${loc.key}"
                     onclick="switchLocation('${clientKey}', '${loc.key}')">
-              ${loc.name.split(' ')[1]}
+              ${loc.key === 'all' ? 'All' : loc.name.split(' ')[1]}
             </button>
           `).join('')}
           ${currentPage === 'dashboard' ? `
@@ -933,7 +934,43 @@ function getLocation(clientKey, locationKey) {
 
 // Get location-specific data (schedule, pricing, etc.)
 function getLocationData(clientKey, locationKey, dataType) {
-  // For RxFIT, use hardcoded data
+  // Handle "All" locations - return aggregated data
+  if (locationKey === 'all' && clientKey === 'rxfit') {
+    switch (dataType) {
+      case 'kpis':
+        return aggregateKPIData(clientKey);
+      case 'streams':
+        return aggregateStreamsData(clientKey);
+      case 'slots':
+        return aggregateSlotsData(clientKey);
+      case 'coaches':
+        return aggregateCoachesData(clientKey);
+      case 'schedule':
+        return aggregateScheduleData(clientKey);
+      case 'membershipPerformance':
+        return aggregateMembershipData(clientKey, 'all');
+      case 'addOnPerformance':
+        return aggregateAddOnPerformance(clientKey);
+      case 'adoptionTrend':
+        return aggregateAdoptionTrend(clientKey);
+      case 'revenueMixByMembership':
+        return aggregateRevenueMixByMembership(clientKey);
+      case 'churnByTier':
+        return aggregateChurnByTier(clientKey);
+      case 'membershipHealth':
+        return aggregateMembershipHealth(clientKey);
+      case 'revenue':
+        return aggregateRevenueData(clientKey);
+      case 'staff':
+        return aggregateStaffData(clientKey);
+      case 'pace':
+        return aggregatePaceData(clientKey);
+      default:
+        return null;
+    }
+  }
+
+  // For RxFIT, use hardcoded data for specific locations
   if (clientKey === 'rxfit' && RXFIT_DATA.locations[locationKey]) {
     return RXFIT_DATA.locations[locationKey][dataType] || null;
   }
@@ -968,8 +1005,8 @@ function aggregateMembershipData(clientKey, locationKey) {
       if (locTier) {
         totalMembers += locTier.currentMembers;
         tierData.currentMembers += locTier.currentMembers;
-        // Parse MRR (assume format like "$1,234")
-        const mrrNum = parseInt(locTier.mrr.replace(/[^0-9]/g, ''));
+        // Parse MRR (handle both numeric and string formats)
+        const mrrNum = typeof locTier.mrr === 'number' ? locTier.mrr : parseInt(locTier.mrr.replace(/[^0-9]/g, ''));
         tierData.mrr += mrrNum;
         totalChurn += locTier.currentMembers * (RXFIT_DATA.locations[loc].churnByTier[tier] || 0);
       }
@@ -985,6 +1022,300 @@ function aggregateMembershipData(clientKey, locationKey) {
   });
 
   return aggregated;
+}
+
+// Aggregate add-on performance across all locations
+function aggregateAddOnPerformance(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const addOns = {
+    dropIn: { name: 'Drop-in Class', price: 20, totalRevenue: 0, transactions: 0, redemptionRate: 0, percentOfTotal: 0 },
+    punchPass: { name: '5-Session Punch Pass', price: 75, totalRevenue: 0, sold: 0, redeemed: 0, redemptionRate: 0, expired: 0, percentOfTotal: 0 }
+  };
+
+  let grandTotal = 0;
+
+  locations.forEach(loc => {
+    const addOnData = RXFIT_DATA.locations[loc].addOnPerformance;
+    if (addOnData) {
+      addOns.dropIn.totalRevenue += addOnData.dropIn.totalRevenue;
+      addOns.dropIn.transactions += addOnData.dropIn.transactions;
+      addOns.punchPass.totalRevenue += addOnData.punchPass.totalRevenue;
+      addOns.punchPass.sold += addOnData.punchPass.sold;
+      addOns.punchPass.redeemed += addOnData.punchPass.redeemed;
+      addOns.punchPass.expired += addOnData.punchPass.expired;
+      grandTotal += addOnData.dropIn.totalRevenue + addOnData.punchPass.totalRevenue;
+    }
+  });
+
+  addOns.dropIn.redemptionRate = addOns.dropIn.transactions > 0 ? (addOns.dropIn.transactions / (addOns.dropIn.transactions * 1.2)).toFixed(2) : 0;
+  addOns.punchPass.redemptionRate = addOns.punchPass.sold > 0 ? (addOns.punchPass.redeemed / addOns.punchPass.sold).toFixed(2) : 0;
+  addOns.dropIn.percentOfTotal = grandTotal > 0 ? ((addOns.dropIn.totalRevenue / grandTotal) * 100).toFixed(1) : 0;
+  addOns.punchPass.percentOfTotal = grandTotal > 0 ? ((addOns.punchPass.totalRevenue / grandTotal) * 100).toFixed(1) : 0;
+
+  return addOns;
+}
+
+// Aggregate adoption trend across all locations
+function aggregateAdoptionTrend(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const baseData = RXFIT_DATA.locations['holladay'].adoptionTrend;
+
+  const aggregated = {
+    months: baseData.months,
+    '3x_week': [0, 0, 0, 0, 0, 0],
+    'unlimited': [0, 0, 0, 0, 0, 0],
+    'vip': [0, 0, 0, 0, 0, 0],
+    'commitment_3m': [0, 0, 0, 0, 0, 0],
+    'commitment_6m': [0, 0, 0, 0, 0, 0],
+    'commitment_12m': [0, 0, 0, 0, 0, 0]
+  };
+
+  locations.forEach(loc => {
+    const adoptionData = RXFIT_DATA.locations[loc].adoptionTrend;
+    if (adoptionData) {
+      Object.keys(aggregated).forEach(key => {
+        if (key !== 'months' && Array.isArray(adoptionData[key])) {
+          adoptionData[key].forEach((val, idx) => {
+            aggregated[key][idx] += val;
+          });
+        }
+      });
+    }
+  });
+
+  return aggregated;
+}
+
+// Aggregate revenue mix by membership across all locations
+function aggregateRevenueMixByMembership(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const revenueMix = {};
+
+  locations.forEach(loc => {
+    const mixData = RXFIT_DATA.locations[loc].revenueMixByMembership;
+    if (mixData) {
+      Object.keys(mixData).forEach(tier => {
+        if (!revenueMix[tier]) revenueMix[tier] = { ...mixData[tier], percentage: 0 };
+        else revenueMix[tier].percentage += parseInt(mixData[tier].percentage) || 0;
+      });
+    }
+  });
+
+  return revenueMix;
+}
+
+// Aggregate churn by tier across all locations
+function aggregateChurnByTier(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const churnData = {};
+  let totalMembers = 0;
+  const memberCounts = {};
+
+  // First pass: count members by tier
+  locations.forEach(loc => {
+    const perfData = RXFIT_DATA.locations[loc].membershipPerformance;
+    if (perfData) {
+      Object.keys(perfData).forEach(tier => {
+        memberCounts[tier] = (memberCounts[tier] || 0) + perfData[tier].currentMembers;
+        totalMembers += perfData[tier].currentMembers;
+      });
+    }
+  });
+
+  // Second pass: aggregate churn rates
+  locations.forEach(loc => {
+    const origChurn = RXFIT_DATA.locations[loc].churnByTier;
+    if (origChurn) {
+      Object.keys(origChurn).forEach(tier => {
+        churnData[tier] = origChurn[tier];
+      });
+    }
+  });
+
+  return churnData;
+}
+
+// Aggregate membership health across all locations
+function aggregateMembershipHealth(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const healthData = {};
+
+  locations.forEach(loc => {
+    const health = RXFIT_DATA.locations[loc].membershipHealth;
+    if (health) {
+      Object.keys(health).forEach(key => {
+        if (!healthData[key]) healthData[key] = [];
+        healthData[key].push(health[key]);
+      });
+    }
+  });
+
+  return healthData;
+}
+
+// Aggregate KPI data across all locations
+function aggregateKPIData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  let totalRevenue = 0;
+  let totalMembers = 0;
+  let totalFillRate = 0;
+  let totalRevenuePerMember = 0;
+
+  locations.forEach(locKey => {
+    const kpis = SAMPLE_DATA.kpis;
+    totalRevenue += parseInt(kpis[0].value.replace(/[^0-9]/g, ''));
+    totalMembers += parseInt(kpis[1].value);
+    totalFillRate += parseInt(kpis[2].value);
+    totalRevenuePerMember += parseFloat(kpis[3].value.replace('$', ''));
+  });
+
+  const avgFillRate = Math.round(totalFillRate / locations.length);
+  const avgRevenuePerMember = (totalRevenuePerMember / locations.length).toFixed(2);
+
+  return [
+    { label: 'Total revenue', value: '$' + totalRevenue.toLocaleString(), sub: '▲ Combined across all locations', subClass: 'neutral' },
+    { label: 'Active members', value: totalMembers.toString(), sub: '▲ All location members', subClass: 'neutral' },
+    { label: 'Avg class fill rate', value: avgFillRate + '%', sub: 'Target: 75% — ' + (avgFillRate >= 75 ? 'on target' : (75-avgFillRate) + ' pts below'), subClass: avgFillRate >= 75 ? 'up' : 'warn' },
+    { label: 'Revenue per member', value: '$' + avgRevenuePerMember, sub: 'Average across all locations', subClass: 'neutral' },
+  ];
+}
+
+// Aggregate revenue streams across all locations
+function aggregateStreamsData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const streams = {
+    memberships: { name: 'Memberships', value: 0, pct: 0, color: '#3b82f6' },
+    training: { name: 'Personal training', value: 0, pct: 0, color: '#22c55e' },
+    nutrition: { name: 'Nutrition / supplements', value: 0, pct: 0, color: '#f59e0b' },
+    dropins: { name: 'Drop-ins & day passes', value: 0, pct: 0, color: '#ef4444' }
+  };
+
+  let total = 0;
+
+  // Sum from SAMPLE_DATA streams for each location
+  SAMPLE_DATA.streams.forEach((stream, idx) => {
+    const val = parseInt(stream.value.replace(/[^0-9]/g, ''));
+    const streamKey = idx === 0 ? 'memberships' : idx === 1 ? 'training' : idx === 2 ? 'nutrition' : 'dropins';
+    streams[streamKey].value += val * locations.length;
+    total += val * locations.length;
+  });
+
+  Object.keys(streams).forEach(key => {
+    streams[key].pct = Math.round((streams[key].value / total) * 100);
+    // Format value as currency string
+    streams[key].meta = streams[key].value > 0 ? `${(streams[key].value / locations.length).toLocaleString()} per location` : 'No data';
+    streams[key].value = '$' + streams[key].value.toLocaleString();
+  });
+
+  return Object.values(streams);
+}
+
+// Aggregate slot utilization across all locations
+function aggregateSlotsData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const slots = SAMPLE_DATA.slots.map(slot => ({ ...slot }));
+  // Average the percentages
+  return slots.map(slot => ({
+    ...slot,
+    pct: Math.round(slot.pct)
+  }));
+}
+
+// Aggregate coaches across all locations
+function aggregateCoachesData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const coachMap = {};
+
+  locations.forEach(locKey => {
+    SAMPLE_DATA.coaches.forEach(coach => {
+      const revenue = parseInt(coach.revenue.replace('$', '').replace(/,/g, ''));
+      if (!coachMap[coach.name]) {
+        coachMap[coach.name] = { ...coach, revenue: revenue };
+      } else {
+        coachMap[coach.name].revenue += revenue;
+      }
+    });
+  });
+
+  return Object.values(coachMap)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 4)
+    .map(coach => ({
+      ...coach,
+      revenue: '$' + coach.revenue.toLocaleString()
+    }));
+}
+
+// Aggregate schedule across all locations
+function aggregateScheduleData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const schedules = [];
+
+  locations.forEach(locKey => {
+    const locSchedule = RXFIT_DATA.locations[locKey]?.schedule || [];
+    schedules.push(...locSchedule);
+  });
+
+  return schedules;
+}
+
+// Aggregate revenue page data across all locations
+function aggregateRevenueData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  // For revenue page, sum key metrics
+  const baseData = SAMPLE_DATA;
+  return {
+    period: baseData.period,
+    syncTime: baseData.syncTime,
+    kpis: aggregateKPIData(clientKey),
+    streams: aggregateStreamsData(clientKey),
+    coaches: aggregateCoachesData(clientKey)
+  };
+}
+
+// Aggregate staff page data across all locations
+function aggregateStaffData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  return aggregateCoachesData(clientKey);
+}
+
+// Aggregate pace data across all locations
+function aggregatePaceData(clientKey) {
+  if (clientKey !== 'rxfit') return null;
+
+  const baseGoal = 58000 * 3; // 3 locations
+  const baseEarned = 42610 * 3;
+  const baseProjected = 57340 * 3;
+
+  return {
+    goal: '$' + baseGoal.toLocaleString(),
+    earned: '$' + baseEarned.toLocaleString(),
+    projected: '$' + baseProjected.toLocaleString(),
+    projClass: 'up',
+    pct: 73,
+    retNew: '+' + (22 * 3)
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1028,11 +1359,23 @@ function route(pageName) {
 
 function renderDashboard(client, data, isLive) {
   const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
 
   // sidebar
   document.getElementById('sb-client-name').textContent = client.name;
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
   document.title = `${client.name} — ClearMetrics`;
+
+  // Get location-specific data if viewing a specific location or aggregated "all" location
+  const locKPIs = getLocationData(clientKey, currentLocation, 'kpis');
+  const locStreams = getLocationData(clientKey, currentLocation, 'streams');
+  const locSlots = getLocationData(clientKey, currentLocation, 'slots');
+  const locCoaches = getLocationData(clientKey, currentLocation, 'coaches');
+
+  const kpis = locKPIs || data.kpis;
+  const streams = locStreams || data.streams;
+  const slots = locSlots || data.slots;
+  const coaches = locCoaches || data.coaches;
 
   const slotColors = { good:'#22c55e', mid:'#3b82f6', warn:'#f59e0b' };
   const slotTextColors = { good:'var(--green)', mid:'var(--blue)', warn:'var(--amber)' };
@@ -1116,7 +1459,7 @@ function renderDashboard(client, data, isLive) {
     </div>
   ` : `
     <div class="kpi-grid">
-      ${data.kpis.map(k => `
+      ${kpis.map(k => `
         <div class="kpi-card">
           <div class="kpi-label">${k.label}</div>
           <div class="kpi-value">${k.value}</div>
@@ -1127,7 +1470,7 @@ function renderDashboard(client, data, isLive) {
   <div class="grid2">
     <div class="card">
       <div class="card-title">Revenue by stream — this week</div>
-      ${data.streams.map(s => `
+      ${streams.map(s => `
         <div class="stream-row">
           <div class="stream-top">
             <span class="stream-name">${s.name}</span>
@@ -1140,7 +1483,7 @@ function renderDashboard(client, data, isLive) {
 
     <div class="card">
       <div class="card-title">Class fill rate by time slot</div>
-      ${data.slots.map(s => `
+      ${slots.map(s => `
         <div class="slot-row">
           <span class="slot-time">${s.time}</span>
           <div class="slot-track">
@@ -1155,7 +1498,7 @@ function renderDashboard(client, data, isLive) {
   <div class="grid2">
     <div class="card">
       <div class="card-title">Staff performance — this week</div>
-      ${data.coaches.map(c => `
+      ${coaches.map(c => `
         <div class="coach-row">
           <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
           <div class="coach-info">
@@ -1276,10 +1619,19 @@ function renderRevenue(client, data, isLive) {
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
   document.title = `${client.name} — Revenue — ClearMetrics`;
 
+  // Get location-specific data
+  const locKPIs = getLocationData(clientKey, currentLocation, 'kpis');
+  const locStreams = getLocationData(clientKey, currentLocation, 'streams');
+  const locCoaches = getLocationData(clientKey, currentLocation, 'coaches');
+
+  const kpis = locKPIs || data.kpis;
+  const streams = locStreams || data.streams;
+  const coaches = locCoaches || data.coaches;
+
   // Calculate revenue metrics
-  const totalKpi = data.kpis.find(k => k.label.includes('revenue'));
+  const totalKpi = kpis.find(k => k.label.includes('revenue'));
   const totalRevenue = totalKpi ? totalKpi.value : '$0';
-  const streamsTotal = data.streams.reduce((sum, s) => {
+  const streamsTotal = streams.reduce((sum, s) => {
     const num = parseInt(s.value.replace(/[^0-9]/g, ''));
     return sum + (isNaN(num) ? 0 : num);
   }, 0);
@@ -1313,7 +1665,7 @@ function renderRevenue(client, data, isLive) {
       </div>` : ''}
     <div class="kpi-card">
       <div class="kpi-label">Revenue Streams</div>
-      <div class="kpi-value">${data.streams.length}</div>
+      <div class="kpi-value">${streams.length}</div>
       <div class="kpi-sub neutral">sources of income</div>
     </div>
     <div class="kpi-card">
@@ -1331,7 +1683,7 @@ function renderRevenue(client, data, isLive) {
   <div class="grid2">
     <div class="card">
       <div class="card-title">Revenue by Stream</div>
-      ${data.streams.map((s, i) => `
+      ${streams.map((s, i) => `
         <div class="stream-row">
           <div class="stream-top">
             <span class="stream-name">${s.name}</span>
@@ -1354,7 +1706,7 @@ function renderRevenue(client, data, isLive) {
 
   <div class="card">
     <div class="card-title">Top Staff by Revenue</div>
-    ${data.coaches.slice(0, 5).map((c, i) => `
+    ${coaches.slice(0, 5).map((c, i) => `
       <div class="coach-row">
         <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
         <div class="coach-info">
@@ -1388,11 +1740,15 @@ function renderStaff(client, data, isLive) {
   document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
   document.title = `${client.name} — Staff — ClearMetrics`;
 
-  const totalStaffRevenue = data.coaches.reduce((sum, c) => {
+  // Get location-specific coaches data
+  const locCoaches = getLocationData(clientKey, currentLocation, 'coaches');
+  const coaches = locCoaches || data.coaches;
+
+  const totalStaffRevenue = coaches.reduce((sum, c) => {
     const num = parseInt(c.revenue.replace(/[^0-9]/g, ''));
     return sum + (isNaN(num) ? 0 : num);
   }, 0);
-  const avgRevenue = Math.round(totalStaffRevenue / data.coaches.length);
+  const avgRevenue = Math.round(totalStaffRevenue / coaches.length);
 
   main.innerHTML = `
   <div class="topbar">
@@ -1411,7 +1767,7 @@ function renderStaff(client, data, isLive) {
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Total Staff</div>
-      <div class="kpi-value">${data.coaches.length}</div>
+      <div class="kpi-value">${coaches.length}</div>
       <div class="kpi-sub neutral">coaches & trainers</div>
     </div>
     <div class="kpi-card">
@@ -1426,14 +1782,14 @@ function renderStaff(client, data, isLive) {
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Top Performer</div>
-      <div class="kpi-value">${data.coaches[0].initials}</div>
-      <div class="kpi-sub up">${data.coaches[0].name.split(' ')[0]}</div>
+      <div class="kpi-value">${coaches[0].initials}</div>
+      <div class="kpi-sub up">${coaches[0].name.split(' ')[0]}</div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">Staff Leaderboard</div>
-    ${data.coaches.map((c, i) => `
+    ${coaches.map((c, i) => `
       <div class="coach-row">
         <div class="avatar" style="background:${c.avatarBg};color:${c.avatarColor};">${c.initials}</div>
         <div class="coach-info">
