@@ -240,6 +240,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3V1z"/><polyline points="10,1 10,4 13,4"/></svg>
     Monthly Report
   </div>
+  <div class="nav-item" data-page="memberships">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="3"/><path d="M1 13c0-2.2 1.8-4 4-4s4 1.8 4 4"/><circle cx="12" cy="5" r="2.5"/><path d="M9 12.5c0-1.8 1.3-3.3 3-3.3s3 1.5 3 3.3"/></svg>
+    Memberships
+  </div>
   <div class="nav-item" data-page="pace">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 4v4l3 2"/></svg>
     Pace Tracker
@@ -355,6 +359,51 @@ const RXFIT_DATA = {
         { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
         { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
       ],
+      membershipPerformance: {
+        "3x_week": { name: "3x/week Group", tier: "3x_week", currentMembers: 42, mrr: 5040, churnRate: 0.05, arpu: 1440, trend: "up", trendPercent: 3.2, badgeLabel: "Popular" },
+        "unlimited": { name: "Unlimited Group", tier: "unlimited", currentMembers: 68, mrr: 9520, churnRate: 0.08, arpu: 2016, trend: "down", trendPercent: -2.1, badgeLabel: "Best Value" },
+        "vip": { name: "V.I.P. Elite", tier: "vip", currentMembers: 12, mrr: 2352, churnRate: 0.15, arpu: 2548, trend: "down", trendPercent: -8.5, badgeLabel: "Premium" },
+        "commitment_3m": { name: "3-Month Commitment", tier: "commitment_3m", currentMembers: 15, mrr: 1950, churnRate: 0.03, arpu: 1560, trend: "up", trendPercent: 12.0, badgeLabel: "Start Here" },
+        "commitment_6m": { name: "6-Month Commitment", tier: "commitment_6m", currentMembers: 8, mrr: 960, churnRate: 0.02, arpu: 960, trend: "stable", trendPercent: 0, badgeLabel: "14% Savings" },
+        "commitment_12m": { name: "12-Month Commitment", tier: "commitment_12m", currentMembers: 5, mrr: 550, churnRate: 0.01, arpu: 660, trend: "up", trendPercent: 5.0, badgeLabel: "21% Savings" }
+      },
+      addOnPerformance: {
+        "dropIn": { name: "Drop-in Class", price: 20, totalRevenue: 1240, transactions: 62, avgRevenue: 20, percentOfTotal: 4.2, trend: "up", trendPercent: 5.1 },
+        "punchPass": { name: "5-Session Punch Pass", price: 75, totalRevenue: 1500, sold: 20, redeemed: 14, redemptionRate: 0.70, expired: 6, avgRevenue: 75, percentOfTotal: 5.1, trend: "down", trendPercent: -3.2, churnInsight: "6 punch passes expire unused monthly ($450 lost opportunity)" }
+      },
+      adoptionTrend: {
+        months: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+        "3x_week": [38, 39, 40, 41, 42, 42],
+        "unlimited": [55, 59, 62, 65, 67, 68],
+        "vip": [18, 17, 16, 15, 13, 12],
+        "commitment_3m": [5, 6, 8, 10, 13, 15],
+        "commitment_6m": [2, 3, 4, 5, 6, 8],
+        "commitment_12m": [1, 1, 2, 3, 4, 5]
+      },
+      revenueMixByMembership: {
+        "3x_week_pct": 20.3,
+        "unlimited_pct": 38.4,
+        "vip_pct": 9.5,
+        "commitment_pct": 13.2,
+        "addons_pct": 18.6
+      },
+      churnByTier: {
+        "3x_week": 0.05,
+        "unlimited": 0.08,
+        "vip": 0.15,
+        "commitment_3m": 0.03,
+        "commitment_6m": 0.02,
+        "commitment_12m": 0.01
+      },
+      membershipHealth: {
+        overallChurn: 0.07,
+        ltv_3x_week: 1440,
+        ltv_unlimited: 2016,
+        ltv_vip: 2548,
+        newMembersThisMonth: 8,
+        monthlyTarget: 10,
+        winRate: 0.80
+      }
     },
     orem: {
       schedule: [
@@ -384,6 +433,51 @@ const RXFIT_DATA = {
         { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
         { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
       ],
+      membershipPerformance: {
+        "3x_week": { name: "3x/week Group", tier: "3x_week", currentMembers: 38, mrr: 4560, churnRate: 0.06, arpu: 1440, trend: "up", trendPercent: 2.1, badgeLabel: "Popular" },
+        "unlimited": { name: "Unlimited Group", tier: "unlimited", currentMembers: 59, mrr: 8260, churnRate: 0.09, arpu: 2016, trend: "down", trendPercent: -1.8, badgeLabel: "Best Value" },
+        "vip": { name: "V.I.P. Elite", tier: "vip", currentMembers: 10, mrr: 1960, churnRate: 0.14, arpu: 2548, trend: "down", trendPercent: -6.2, badgeLabel: "Premium" },
+        "commitment_3m": { name: "3-Month Commitment", tier: "commitment_3m", currentMembers: 13, mrr: 1690, churnRate: 0.04, arpu: 1560, trend: "up", trendPercent: 9.5, badgeLabel: "Start Here" },
+        "commitment_6m": { name: "6-Month Commitment", tier: "commitment_6m", currentMembers: 7, mrr: 840, churnRate: 0.03, arpu: 960, trend: "stable", trendPercent: 0, badgeLabel: "14% Savings" },
+        "commitment_12m": { name: "12-Month Commitment", tier: "commitment_12m", currentMembers: 4, mrr: 440, churnRate: 0.02, arpu: 660, trend: "up", trendPercent: 3.2, badgeLabel: "21% Savings" }
+      },
+      addOnPerformance: {
+        "dropIn": { name: "Drop-in Class", price: 20, totalRevenue: 1080, transactions: 54, avgRevenue: 20, percentOfTotal: 4.0, trend: "up", trendPercent: 4.2 },
+        "punchPass": { name: "5-Session Punch Pass", price: 75, totalRevenue: 1350, sold: 18, redeemed: 12, redemptionRate: 0.67, expired: 6, avgRevenue: 75, percentOfTotal: 5.0, trend: "down", trendPercent: -2.8, churnInsight: "6 punch passes expire unused monthly ($400 lost opportunity)" }
+      },
+      adoptionTrend: {
+        months: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+        "3x_week": [35, 36, 37, 38, 38, 38],
+        "unlimited": [50, 52, 55, 57, 59, 59],
+        "vip": [16, 15, 14, 12, 11, 10],
+        "commitment_3m": [4, 5, 7, 9, 11, 13],
+        "commitment_6m": [2, 2, 3, 4, 5, 7],
+        "commitment_12m": [1, 1, 2, 2, 3, 4]
+      },
+      revenueMixByMembership: {
+        "3x_week_pct": 19.5,
+        "unlimited_pct": 35.2,
+        "vip_pct": 8.4,
+        "commitment_pct": 12.8,
+        "addons_pct": 24.1
+      },
+      churnByTier: {
+        "3x_week": 0.06,
+        "unlimited": 0.09,
+        "vip": 0.14,
+        "commitment_3m": 0.04,
+        "commitment_6m": 0.03,
+        "commitment_12m": 0.02
+      },
+      membershipHealth: {
+        overallChurn: 0.08,
+        ltv_3x_week: 1440,
+        ltv_unlimited: 2016,
+        ltv_vip: 2548,
+        newMembersThisMonth: 7,
+        monthlyTarget: 9,
+        winRate: 0.78
+      }
     },
     spanish_fork: {
       schedule: [
@@ -411,7 +505,63 @@ const RXFIT_DATA = {
         { section: 'addon', name: 'Drop-in Class', price: '$20', frequency: '/class', features: ['Single class access', 'T-shirt included', 'No commitment'], badge: 'Try it' },
         { section: 'addon', name: '5-Session Punch Pass', price: '$75', frequency: '5 uses', features: ['5 classes over 3 months', 'Flexible timing', 'Can share with friend'], badge: 'Flexible' },
       ],
+
+      // ─────────────────────────────────────────────────
+      // MEMBERSHIP ANALYTICS DATA (for Memberships page)
+      // ─────────────────────────────────────────────────
+      membershipPerformance: {
+        "3x_week": { name: "3x/week Group", tier: "3x_week", currentMembers: 42, mrr: 5040, churnRate: 0.05, arpu: 1440, trend: "up", trendPercent: 3.2, badgeLabel: "Popular" },
+        "unlimited": { name: "Unlimited Group", tier: "unlimited", currentMembers: 68, mrr: 9520, churnRate: 0.08, arpu: 2016, trend: "down", trendPercent: -2.1, badgeLabel: "Best Value" },
+        "vip": { name: "V.I.P. Elite", tier: "vip", currentMembers: 12, mrr: 2352, churnRate: 0.15, arpu: 2548, trend: "down", trendPercent: -8.5, badgeLabel: "Premium" },
+        "commitment_3m": { name: "3-Month Commitment", tier: "commitment_3m", currentMembers: 15, mrr: 1950, churnRate: 0.03, arpu: 1560, trend: "up", trendPercent: 12.0, badgeLabel: "Start Here" },
+        "commitment_6m": { name: "6-Month Commitment", tier: "commitment_6m", currentMembers: 8, mrr: 960, churnRate: 0.02, arpu: 960, trend: "stable", trendPercent: 0, badgeLabel: "14% Savings" },
+        "commitment_12m": { name: "12-Month Commitment", tier: "commitment_12m", currentMembers: 5, mrr: 550, churnRate: 0.01, arpu: 660, trend: "up", trendPercent: 5.0, badgeLabel: "21% Savings" }
+      },
+      addOnPerformance: {
+        "dropIn": { name: "Drop-in Class", price: 20, totalRevenue: 1240, transactions: 62, avgRevenue: 20, percentOfTotal: 4.2, trend: "up", trendPercent: 5.1 },
+        "punchPass": { name: "5-Session Punch Pass", price: 75, totalRevenue: 1500, sold: 20, redeemed: 14, redemptionRate: 0.70, expired: 6, avgRevenue: 75, percentOfTotal: 5.1, trend: "down", trendPercent: -3.2, churnInsight: "6 punch passes expire unused monthly ($450 lost opportunity)" }
+      },
+      adoptionTrend: {
+        months: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+        "3x_week": [38, 39, 40, 41, 42, 42],
+        "unlimited": [55, 59, 62, 65, 67, 68],
+        "vip": [18, 17, 16, 15, 13, 12],
+        "commitment_3m": [5, 6, 8, 10, 13, 15],
+        "commitment_6m": [2, 3, 4, 5, 6, 8],
+        "commitment_12m": [1, 1, 2, 3, 4, 5]
+      },
+      revenueMixByMembership: {
+        "3x_week_pct": 20.3,
+        "unlimited_pct": 38.4,
+        "vip_pct": 9.5,
+        "commitment_pct": 13.2,
+        "addons_pct": 18.6
+      },
+      churnByTier: {
+        "3x_week": 0.05,
+        "unlimited": 0.08,
+        "vip": 0.15,
+        "commitment_3m": 0.03,
+        "commitment_6m": 0.02,
+        "commitment_12m": 0.01
+      },
+      membershipHealth: {
+        overallChurn: 0.07,
+        ltv_3x_week: 1440,
+        ltv_unlimited: 2016,
+        ltv_vip: 2548,
+        newMembersThisMonth: 8,
+        monthlyTarget: 10,
+        winRate: 0.80
+      }
     },
+  },
+
+  // Location Comparison Data (for Dashboard comparison view)
+  locationComparison: {
+    holladay: { totalRevenue: "$27,078", activeMembers: 187, classRillRate: "61%", revenuePerMember: "$79.25", churnRate: "6%" },
+    orem: { totalRevenue: "$24,320", activeMembers: 172, classRillRate: "58%", revenuePerMember: "$77.50", churnRate: "7%" },
+    spanish_fork: { totalRevenue: "$19,450", activeMembers: 145, classRillRate: "55%", revenuePerMember: "$75.20", churnRate: "8%" }
   }
 };
 
@@ -599,6 +749,13 @@ function renderLocationSelector(clientKey) {
               ${loc.name.split(' ')[1]}
             </button>
           `).join('')}
+          ${currentPage === 'dashboard' ? `
+            <button class="location-pill ${currentLocation === 'comparison' ? 'active' : ''}"
+                    style="border-color:var(--teal);color:${currentLocation === 'comparison' ? 'white' : 'var(--teal)'};"
+                    onclick="switchLocation('${clientKey}', 'comparison')">
+              Comparison
+            </button>
+          ` : ''}
         </div>
         ${currentLoc ? `
           <div class="location-meta">
@@ -612,8 +769,11 @@ function renderLocationSelector(clientKey) {
 }
 
 function switchLocation(clientKey, locationKey) {
-  const location = getLocation(clientKey, locationKey);
-  if (!location) return;
+  // Allow 'comparison' as a special location without checking LOCATION_REGISTRY
+  if (locationKey !== 'comparison') {
+    const location = getLocation(clientKey, locationKey);
+    if (!location) return;
+  }
 
   currentLocation = locationKey;
   updateLocationURL(locationKey);
@@ -787,6 +947,46 @@ function updateLocationURL(locationKey) {
   window.history.pushState({}, '', `?${params.toString()}`);
 }
 
+// Aggregate membership data across all locations
+function aggregateMembershipData(clientKey, locationKey) {
+  if (locationKey !== 'all' || clientKey !== 'rxfit') {
+    return null;
+  }
+
+  const locations = ['holladay', 'orem', 'spanish_fork'];
+  const aggregated = {};
+
+  // Sum membership tiers across all locations
+  const membershipTiers = ['3x_week', 'unlimited', 'vip', 'commitment_3m', 'commitment_6m', 'commitment_12m'];
+  membershipTiers.forEach(tier => {
+    const tierData = { currentMembers: 0, mrr: 0, trend: 'up', trendPercent: 0 };
+    let totalMembers = 0;
+    let totalChurn = 0;
+
+    locations.forEach(loc => {
+      const locTier = RXFIT_DATA.locations[loc].membershipPerformance[tier];
+      if (locTier) {
+        totalMembers += locTier.currentMembers;
+        tierData.currentMembers += locTier.currentMembers;
+        // Parse MRR (assume format like "$1,234")
+        const mrrNum = parseInt(locTier.mrr.replace(/[^0-9]/g, ''));
+        tierData.mrr += mrrNum;
+        totalChurn += locTier.currentMembers * (RXFIT_DATA.locations[loc].churnByTier[tier] || 0);
+      }
+    });
+
+    if (tierData.currentMembers > 0) {
+      tierData.mrr = '$' + tierData.mrr.toLocaleString();
+      tierData.name = RXFIT_DATA.locations['holladay'].membershipPerformance[tier]?.name || tier;
+      tierData.arpu = RXFIT_DATA.locations['holladay'].membershipPerformance[tier]?.arpu || '$0';
+      tierData.badgeLabel = RXFIT_DATA.locations['holladay'].membershipPerformance[tier]?.badgeLabel || '';
+      aggregated[tier] = tierData;
+    }
+  });
+
+  return aggregated;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    ROUTING — Dispatch to the correct page renderer
 ═══════════════════════════════════════════════════════════════════ */
@@ -817,6 +1017,7 @@ function route(pageName) {
     staff: renderStaff,
     schedule: renderSchedule,
     report: renderMonthlyReport,
+    memberships: renderMemberships,
     pace: renderPace,
     datasource: renderDataSource
   };
@@ -860,14 +1061,68 @@ function renderDashboard(client, data, isLive) {
 
   ${renderLocationSelector(Object.keys(CLIENT_REGISTRY)[0])}
 
-  <div class="kpi-grid">
-    ${data.kpis.map(k => `
-      <div class="kpi-card">
-        <div class="kpi-label">${k.label}</div>
-        <div class="kpi-value">${k.value}</div>
-        <div class="kpi-sub ${k.subClass}">${k.sub}</div>
-      </div>`).join('')}
-  </div>
+  ${currentLocation === 'comparison' ? `
+    <div class="card">
+      <div class="card-title">Location Comparison</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:12px 0;color:var(--muted);font-weight:500;white-space:nowrap;"></th>
+              <th style="text-align:center;padding:12px 16px;color:var(--text);font-weight:600;">Holladay</th>
+              <th style="text-align:center;padding:12px 16px;color:var(--text);font-weight:600;">Orem</th>
+              <th style="text-align:center;padding:12px 16px;color:var(--text);font-weight:600;">Spanish Fork</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 0;color:var(--muted);font-weight:500;">Total Revenue</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;color:var(--green);">${RXFIT_DATA.locationComparison.holladay.totalRevenue}</span> 🥇</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.orem.totalRevenue}</span> 🥈</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.spanish_fork.totalRevenue}</span> 🥉</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 0;color:var(--muted);font-weight:500;">Active Members</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;color:var(--green);">${RXFIT_DATA.locationComparison.holladay.activeMembers}</span> 🥇</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.orem.activeMembers}</span> 🥈</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.spanish_fork.activeMembers}</span> 🥉</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 0;color:var(--muted);font-weight:500;">Class Fill Rate</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;color:var(--green);">${RXFIT_DATA.locationComparison.holladay.classRillRate}</span> 🥇</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.orem.classRillRate}</span> 🥈</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.spanish_fork.classRillRate}</span> 🥉</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 0;color:var(--muted);font-weight:500;">Revenue/Member</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;color:var(--green);">${RXFIT_DATA.locationComparison.holladay.revenuePerMember}</span> 🥇</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.orem.revenuePerMember}</span> 🥈</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.spanish_fork.revenuePerMember}</span> 🥉</td>
+            </tr>
+            <tr style="border-bottom:none;">
+              <td style="padding:12px 0;color:var(--muted);font-weight:500;">Churn Rate</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;color:var(--green);">${RXFIT_DATA.locationComparison.holladay.churnRate}</span> 🥇</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.orem.churnRate}</span> 🥈</td>
+              <td style="text-align:center;padding:12px 16px;"><span style="font-weight:600;">${RXFIT_DATA.locationComparison.spanish_fork.churnRate}</span> 🥉</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="dash-footer">
+      <span>ClearMetrics Location Comparison</span>
+      <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+      <span>${data.syncTime}</span>
+    </div>
+  ` : `
+    <div class="kpi-grid">
+      ${data.kpis.map(k => `
+        <div class="kpi-card">
+          <div class="kpi-label">${k.label}</div>
+          <div class="kpi-value">${k.value}</div>
+          <div class="kpi-sub ${k.subClass}">${k.sub}</div>
+        </div>`).join('')}
+    </div>
 
   <div class="grid2">
     <div class="card">
@@ -957,7 +1212,8 @@ function renderDashboard(client, data, isLive) {
     <span>ClearMetrics Analytics</span>
     <span>${client.name} · ${client.location} · ${client.plan} plan</span>
     <span id="footer-sync">${data.syncTime}</span>
-  </div>`;
+  </div>
+  `}`;
 
   // Animate bars after paint
   requestAnimationFrame(() => {
@@ -1230,11 +1486,6 @@ function renderSchedule(client, data, isLive) {
 
   ${renderLocationSelector(clientKey)}
 
-  <div class="card" style="margin-bottom: 20px;">
-    <div class="card-title">Weekly Class Schedule</div>
-    ${renderScheduleGrid(schedule)}
-  </div>
-
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Total Class Slots</div>
@@ -1269,6 +1520,11 @@ function renderSchedule(client, data, isLive) {
         <span class="slot-pct" style="color:${slotTextColors[s.cls]};">${s.pct}%</span>
       </div>`).join('')}
     ${data.slotNote ? `<div class="slot-note">&#9888; ${data.slotNote}</div>` : ''}
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-title">Weekly Class Schedule</div>
+    ${renderScheduleGrid(schedule)}
   </div>
 
   <div class="dash-footer">
@@ -1367,6 +1623,256 @@ function renderMonthlyReport(client, data, isLive) {
       });
     }, 80);
   });
+}
+
+function renderMemberships(client, data, isLive) {
+  const main = document.getElementById('main-content');
+  const clientKey = Object.keys(CLIENT_REGISTRY)[0];
+
+  document.getElementById('sb-client-name').textContent = client.name;
+  document.getElementById('sb-client-meta').textContent = `${client.location} · ${client.plan}`;
+  document.title = `${client.name} — Memberships — ClearMetrics`;
+
+  // Get location data
+  const locationData = getLocationData(clientKey, currentLocation, 'membershipPerformance');
+  const addOnData = getLocationData(clientKey, currentLocation, 'addOnPerformance');
+  const adoptionData = getLocationData(clientKey, currentLocation, 'adoptionTrend');
+  const revenueMixData = getLocationData(clientKey, currentLocation, 'revenueMixByMembership');
+  const churnData = getLocationData(clientKey, currentLocation, 'churnByTier');
+  const healthData = getLocationData(clientKey, currentLocation, 'membershipHealth');
+
+  if (!locationData || !addOnData) {
+    main.innerHTML = '<div class="notfound"><h2>No membership data available</h2></div>';
+    return;
+  }
+
+  // Helper to format percentage
+  const pct = (v) => `${(v * 100).toFixed(1)}%`;
+  const upDown = (trend) => trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+  const upDownColor = (trend) => trend === 'up' ? 'var(--green)' : trend === 'down' ? 'var(--red)' : 'var(--amber)';
+  const formatCurrency = (val) => typeof val === 'number' ? '$' + val.toLocaleString() : val;
+
+  // Section A: Membership Tier Cards
+  const tierCardsHTML = Object.entries(locationData).map(([key, tier]) => {
+    const isHighChurn = churnData[key] > 0.1;
+    const bgStyle = isHighChurn ? 'background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.2);' : '';
+    return `
+      <div class="card" style="${bgStyle}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <div style="font-weight:600;color:var(--text);">${tier.name}</div>
+          ${tier.badgeLabel ? `<span class="badge" style="background:rgba(59,130,246,.15);color:var(--blue);">${tier.badgeLabel}</span>` : ''}
+        </div>
+        <div style="font-size:28px;font-weight:600;color:var(--blue);margin-bottom:8px;">${tier.currentMembers}</div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:12px;">active members</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div>
+            <div style="color:var(--dim);font-size:11px;margin-bottom:2px;">MRR</div>
+            <div style="font-weight:600;color:var(--text);">${formatCurrency(tier.mrr)}</div>
+          </div>
+          <div>
+            <div style="color:var(--dim);font-size:11px;margin-bottom:2px;">ARPU</div>
+            <div style="font-weight:600;color:var(--text);">${formatCurrency(tier.arpu)}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="color:var(--dim);font-size:11px;margin-bottom:2px;">Churn</div>
+            <div style="font-weight:600;color:${isHighChurn ? 'var(--red)' : 'var(--green)'};">${pct(churnData[key] || 0)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:20px;font-weight:600;color:${upDownColor(tier.trend)};">${upDown(tier.trend)}</div>
+            <div style="font-size:11px;color:var(--muted);">${tier.trendPercent}%</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Section B: Adoption Trends (will render chart via Chart.js after HTML)
+  // Section C: Revenue Mix (will render chart via Chart.js after HTML)
+  // Section D: Add-on Performance
+  const addOnHTML = `
+    <div class="card">
+      <div class="card-title">Add-on Performance</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="color:var(--text);font-weight:600;margin-bottom:12px;">Drop-in Classes</div>
+          <div style="display:grid;gap:10px;font-size:13px;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Total Revenue</span>
+              <span style="font-weight:600;">${addOnData.dropIn.totalRevenue}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Transactions</span>
+              <span style="font-weight:600;">${addOnData.dropIn.transactions}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Avg Revenue</span>
+              <span style="font-weight:600;">$${addOnData.dropIn.avgRevenue}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:4px;">
+              <span style="color:var(--muted);">Trend</span>
+              <span style="font-weight:600;color:${upDownColor(addOnData.dropIn.trend)};">${upDown(addOnData.dropIn.trend)} ${addOnData.dropIn.trendPercent}%</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="color:var(--text);font-weight:600;margin-bottom:12px;">Punch Passes</div>
+          <div style="display:grid;gap:10px;font-size:13px;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Total Revenue</span>
+              <span style="font-weight:600;">${addOnData.punchPass.totalRevenue}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Redeemed</span>
+              <span style="font-weight:600;">${addOnData.punchPass.redeemed} of ${addOnData.punchPass.sold}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:8px;">
+              <span style="color:var(--muted);">Redemption</span>
+              <span style="font-weight:600;color:${addOnData.punchPass.redemptionRate < 0.7 ? 'var(--red)' : 'var(--green)'};">${pct(addOnData.punchPass.redemptionRate)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:4px;">
+              <span style="color:var(--red);">Expired</span>
+              <span style="font-weight:600;color:var(--red);">${addOnData.punchPass.expired}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${addOnData.punchPass.churnInsight ? `<div style="margin-top:14px;padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:var(--radius-sm);font-size:12px;color:var(--text);">${addOnData.punchPass.churnInsight}</div>` : ''}
+    </div>
+  `;
+
+  // Section E: Membership Health
+  const healthHTML = `
+    <div class="card">
+      <div class="card-title">Membership Health</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;">
+        <div>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">Overall Monthly Churn</div>
+          <div style="font-size:24px;font-weight:600;color:${healthData.overallChurn > 0.1 ? 'var(--red)' : 'var(--green)'};">${pct(healthData.overallChurn)}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:4px;">New Members (This Month)</div>
+          <div style="font-size:24px;font-weight:600;color:var(--blue);">${healthData.newMembersThisMonth}<span style="font-size:12px;color:var(--muted);margin-left:4px;">/ ${healthData.monthlyTarget}</span></div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px 0;color:var(--muted);font-weight:500;">Tier</th>
+            <th style="text-align:right;padding:8px 0;color:var(--muted);font-weight:500;">Churn Rate</th>
+            <th style="text-align:right;padding:8px 0;color:var(--muted);font-weight:500;">LTV</th>
+            <th style="text-align:center;padding:8px 0;color:var(--muted);font-weight:500;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(locationData).map(([key, tier]) => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 0;color:var(--text);">${tier.name}</td>
+              <td style="text-align:right;padding:12px 0;color:${churnData[key] > 0.1 ? 'var(--red)' : 'var(--green)'};">${pct(churnData[key])}</td>
+              <td style="text-align:right;padding:12px 0;color:var(--text);font-weight:600;">${formatCurrency(tier.arpu)}</td>
+              <td style="text-align:center;padding:12px 0;">${churnData[key] > 0.1 ? '⚠️' : '✓'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  main.innerHTML = `
+  <div class="topbar">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${client.name}</div>
+      <div class="page-title">Memberships Analytics</div>
+    </div>
+    <div class="topbar-right">
+      ${isLive ? `<span class="live-tag">&#9679; live</span>` : `<span class="sample-tag">sample data</span>`}
+    </div>
+  </div>
+
+  ${renderLocationSelector(clientKey)}
+
+  <h3 style="font-size:13px;font-weight:600;color:var(--text);margin:20px 0 14px;text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono',monospace;">Membership Tiers</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:28px;">
+    ${tierCardsHTML}
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title">6-Month Adoption Trend</div>
+    <canvas id="chart-adoption"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title">Revenue Mix by Membership</div>
+    <canvas id="chart-revenue-mix" style="max-width:300px;"></canvas>
+  </div>
+
+  ${addOnHTML}
+
+  ${healthHTML}
+
+  <div class="dash-footer">
+    <span>ClearMetrics Memberships Analytics</span>
+    <span>${client.name} · ${client.location} · ${client.plan} plan</span>
+    <span>${data.syncTime}</span>
+  </div>
+  `;
+
+  // Render adoption trend chart
+  if (adoptionData && adoptionData.months) {
+    const ctxAdoption = document.getElementById('chart-adoption').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    const datasets = [
+      { label: locationData['3x_week']?.name, data: adoptionData['3x_week'], borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,.1)' },
+      { label: locationData.unlimited?.name, data: adoptionData.unlimited, borderColor: '#22c55e', fill: true, backgroundColor: 'rgba(34,197,94,.1)' },
+      { label: locationData.vip?.name, data: adoptionData.vip, borderColor: '#f59e0b', fill: true, backgroundColor: 'rgba(245,158,11,.1)' }
+    ];
+
+    chartInstance = new Chart(ctxAdoption, {
+      type: 'line',
+      data: {
+        labels: adoptionData.months,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: true, position: 'bottom' } },
+        scales: {
+          y: { stacked: false, beginAtZero: true },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // Render revenue mix chart
+  if (revenueMixData) {
+    const ctxMix = document.getElementById('chart-revenue-mix').getContext('2d');
+    const chartMix = new Chart(ctxMix, {
+      type: 'doughnut',
+      data: {
+        labels: ['3x/week', 'Unlimited', 'V.I.P.', 'Commitments', 'Add-ons'],
+        datasets: [{
+          data: [
+            revenueMixData['3x_week_pct'],
+            revenueMixData.unlimited_pct,
+            revenueMixData.vip_pct,
+            revenueMixData.commitment_pct,
+            revenueMixData.addons_pct
+          ],
+          backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b', '#14b8a6', '#ef4444'],
+          borderColor: 'var(--card)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
 }
 
 function renderPace(client, data, isLive) {
